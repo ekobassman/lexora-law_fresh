@@ -1,42 +1,188 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
+/* LEXORA Premium Brand System - Complete from lexora-law-main */
+
 :root {
-  /* Lexora Brand - Palette Colori */
+  /* Light theme - main content */
+  --background: 36 27% 95%;
+  --foreground: 209 61% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 209 61% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 209 61% 11%;
+  --primary: 209 61% 11%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 36 15% 90%;
+  --secondary-foreground: 209 61% 11%;
+  --muted: 36 15% 92%;
+  --muted-foreground: 209 30% 40%;
+  --accent: 43 40% 92%;
+  --accent-foreground: 43 54% 40%;
+  --destructive: 0 65% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 36 15% 85%;
+  --input: 36 15% 85%;
+  --ring: 43 54% 55%;
+  --radius: 0.5rem;
+  --success: 161 56% 28%;
+  --success-foreground: 0 0% 100%;
+  --warning: 43 54% 55%;
+  --warning-foreground: 209 61% 11%;
+  --sidebar-background: 209 61% 11%;
+  --sidebar-foreground: 36 27% 95%;
+  --sidebar-primary: 43 54% 55%;
+  --sidebar-primary-foreground: 209 61% 11%;
+  --sidebar-accent: 210 25% 16%;
+  --sidebar-accent-foreground: 36 27% 95%;
+  --sidebar-border: 210 25% 25%;
+  --sidebar-ring: 43 54% 55%;
+  /* Lexora Custom Tokens */
+  --navy: 209 61% 11%;
+  --graphite: 210 25% 16%;
+  --ivory: 36 27% 95%;
+  --gold: 43 54% 55%;
+  --green: 161 56% 28%;
+  /* Hex fallbacks */
   --navy-primary: #0f172a;
   --navy-secondary: #1e293b;
-  --navy-light: #334155;
   --gold-primary: #d4af37;
   --gold-light: #f4d03f;
   --gold-dark: #b8941f;
-  --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
-  --border-gold: rgba(212, 175, 55, 0.3);
+}
 
-  --background: 222 47% 11%;
-  --foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
+.dark {
+  --background: 209 61% 11%;
+  --foreground: 36 27% 95%;
+  --card: 210 25% 16%;
+  --card-foreground: 36 27% 95%;
+  --primary: 43 54% 55%;
+  --primary-foreground: 209 61% 11%;
+}
 
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+* {
+  border-color: hsl(var(--border));
+}
+
+html, body {
+  overflow-x: hidden;
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Inter', system-ui, sans-serif;
   line-height: 1.5;
-  font-weight: 400;
-  color-scheme: dark;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: var(--navy-primary);
-  color: var(--text-primary);
+h1, h2, h3, .font-display {
+  font-family: 'Playfair Display', Georgia, serif;
+  letter-spacing: 0.02em;
 }
 
 .font-serif {
   font-family: 'Playfair Display', Georgia, serif;
+}
+
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* Premium card */
+.card-premium {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 15px -3px rgba(11, 28, 45, 0.07), 0 10px 20px -2px rgba(11, 28, 45, 0.04);
+  border: 1px solid hsl(var(--border) / 0.5);
+}
+
+.section-navy {
+  background-color: hsl(var(--navy));
+  color: hsl(var(--ivory));
+}
+
+.section-ivory {
+  background-color: hsl(var(--ivory));
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.text-gold-gradient {
+  background: linear-gradient(135deg, hsl(43 54% 55%), hsl(43 54% 70%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.shadow-premium {
+  box-shadow: 0 2px 15px -3px rgba(11, 28, 45, 0.07), 0 10px 20px -2px rgba(11, 28, 45, 0.04);
+}
+
+.shadow-inset {
+  box-shadow: inset 0 2px 4px 0 rgba(11, 28, 45, 0.06);
+}
+
+/* Animations */
+@keyframes balance {
+  0%, 100% { transform: rotate(-8deg) scale(1); }
+  25% { transform: rotate(0deg) scale(1.05); }
+  50% { transform: rotate(8deg) scale(1); }
+  75% { transform: rotate(0deg) scale(1.05); }
+}
+
+@keyframes balance-glow {
+  0%, 100% { filter: drop-shadow(0 0 4px hsl(var(--gold) / 0.3)); }
+  50% { filter: drop-shadow(0 0 12px hsl(var(--gold) / 0.6)); }
+}
+
+.animate-balance {
+  animation: balance 1.5s ease-in-out infinite, balance-glow 1.5s ease-in-out infinite;
+  transform-origin: center 30%;
+}
+
+@keyframes legal-beam-wave {
+  from { transform: rotate(12deg); }
+  to { transform: rotate(-12deg); }
+}
+
+.legal-loader-beam {
+  transform-box: view-box;
+  transform-origin: 32px 16px;
+  animation: legal-beam-wave 3.2s ease-in-out infinite alternate;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 35s linear infinite;
+  display: flex;
+  width: max-content;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
 }

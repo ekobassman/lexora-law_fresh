@@ -1,7 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguageContext } from '@/contexts/LanguageContext';
-import { Logo } from '@/components/layout/Logo';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { User, Menu, X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
@@ -25,12 +24,16 @@ export function Navbar() {
   }, []);
 
   return (
-    <nav
-      className="fixed top-0 left-0 right-0 z-50 h-20 bg-[#0f172a] border-b border-[rgba(212,175,55,0.3)]"
-      style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-    >
-      <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-        <Logo size="sm" />
+    <nav className="sticky top-0 z-50 w-full bg-navy border-b border-gold/20 h-16 md:h-20">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 h-full flex items-center justify-between">
+        <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2 py-2 shrink-0">
+          <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center shrink-0">
+            <div className="absolute inset-0 rounded-full border-2 border-gold/60" />
+            <div className="absolute inset-1 rounded-full border border-gold/30" />
+            <span className="relative font-display text-base sm:text-lg font-semibold text-gold" style={{ fontFamily: 'Georgia, serif' }}>L</span>
+          </div>
+          <span className="font-display text-lg sm:text-xl font-medium tracking-widest text-ivory uppercase">LEXORA</span>
+        </Link>
 
         <div className="hidden md:flex md:items-center md:gap-6">
           <LanguageSwitcher />
@@ -38,18 +41,14 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="w-10 h-10 rounded-full border border-[#d4af37] flex items-center justify-center text-[#d4af37] hover:bg-[#d4af37] hover:text-[#0f172a] transition"
+              className="w-10 h-10 rounded-full border border-gold/30 flex items-center justify-center text-gold hover:bg-gold hover:text-navy transition bg-graphite"
               aria-label="Menu utente"
             >
               <User className="w-5 h-5" />
             </button>
             {userMenuOpen && (
               <div
-                className="absolute right-0 top-full mt-1 z-50 min-w-[200px] rounded-xl py-2 shadow-xl"
-                style={{
-                  backgroundColor: '#1e293b',
-                  border: '1px solid rgba(212,175,55,0.2)',
-                }}
+              className="absolute right-0 top-full mt-1 z-50 min-w-[200px] rounded-xl py-2 shadow-xl bg-graphite border border-gold/20"
               >
                 {user ? (
                   <>
@@ -97,7 +96,7 @@ export function Navbar() {
                     </Link>
                     <Link
                       to="/auth?mode=signup"
-                      className="block px-4 py-2 text-sm font-medium text-[#d4af37]"
+                      className="block px-4 py-2 text-sm font-medium text-gold"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       {t('nav.signup')}
@@ -111,7 +110,7 @@ export function Navbar() {
 
         <button
           type="button"
-          className="md:hidden p-2 rounded-lg hover:bg-[#1e293b] transition text-[#d4af37]"
+          className="md:hidden p-2 rounded-lg hover:bg-graphite transition text-gold"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Menu"
         >
@@ -120,7 +119,7 @@ export function Navbar() {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden bg-[#1e293b] border-t border-[rgba(212,175,55,0.2)] px-4 py-4 space-y-2">
+        <div className="md:hidden bg-graphite border-t border-gold/20 px-4 py-4 space-y-2">
           <LanguageSwitcher />
           {user ? (
             <>
@@ -152,7 +151,7 @@ export function Navbar() {
               </Link>
               <Link
                 to="/auth?mode=signup"
-                className="block py-3 font-medium text-[#d4af37]"
+                className="block py-3 font-medium text-gold"
                 onClick={() => setMobileOpen(false)}
               >
                 {t('nav.signup')}
@@ -161,6 +160,9 @@ export function Navbar() {
           )}
         </div>
       )}
+
+      {/* Gold divider line */}
+      <div className="h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
     </nav>
   );
 }

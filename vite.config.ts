@@ -15,8 +15,8 @@ export default defineConfig({
         description: 'AI Legal Assistant',
         start_url: '/',
         display: 'standalone',
-        background_color: '#0B1C2D',
-        theme_color: '#C9A24D',
+        background_color: '#0f172a',
+        theme_color: '#0f172a',
         orientation: 'portrait-primary',
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
@@ -26,6 +26,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB for hero/logo assets
       },
     }),
   ],
