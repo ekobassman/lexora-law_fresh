@@ -6,7 +6,7 @@ export function Pricing() {
   const { t } = useLanguageContext();
 
   return (
-    <main className="container py-16 px-4">
+    <main className="container pt-24 pb-16 px-4 bg-[#0f172a] min-h-screen">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-2">{t('nav.pricing')}</h1>
         <p className="text-muted-foreground">Choose the plan that fits your needs</p>
