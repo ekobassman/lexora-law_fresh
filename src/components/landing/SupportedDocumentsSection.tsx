@@ -36,10 +36,11 @@ const DOC_TYPES = [
 export function SupportedDocumentsSection({ id }: SupportedDocumentsSectionProps) {
   const { t } = useLanguageContext();
 
+  const DOC_KEYS = ['tax', 'court', 'immigration', 'insurance', 'rental', 'employment', 'fines', 'debt', 'authorities'] as const;
   const documentTypes = DOC_TYPES.map((d, i) => ({
     ...d,
-    title: getSafeText(t, `landingSections.documents.types.${i}.title`, ''),
-    description: getSafeText(t, `landingSections.documents.types.${i}.description`, ''),
+    title: getSafeText(t, `documents.${DOC_KEYS[i]}`, ''),
+    description: getSafeText(t, `documents.${DOC_KEYS[i]}_desc`, ''),
   }));
 
   return (
@@ -47,13 +48,13 @@ export function SupportedDocumentsSection({ id }: SupportedDocumentsSectionProps
       <div className="container">
         <div className="text-center mb-12">
           <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-transparent text-[#d4af37] border border-[#d4af37] mb-4">
-            {getSafeText(t, 'landingSections.documents.badge', 'Supported Documents')}
+            {getSafeText(t, 'documents.label', 'Supported Documents')}
           </span>
           <h2 className="text-3xl md:text-4xl font-display font-semibold text-[#0f172a] mb-4">
-            {getSafeText(t, 'landingSections.documents.title', 'Which documents can Lexora analyze?')}
+            {getSafeText(t, 'documents.title', 'Which documents can Lexora analyze?')}
           </h2>
           <p className="text-[#4b5563] max-w-2xl mx-auto">
-            {getSafeText(t, 'landingSections.documents.subtitle', 'Lexora understands a variety of official letters.')}
+            {getSafeText(t, 'documents.subtitle', 'Lexora understands a variety of official letters.')}
           </p>
         </div>
 
@@ -80,7 +81,7 @@ export function SupportedDocumentsSection({ id }: SupportedDocumentsSectionProps
         </div>
 
         <div className="text-center mt-12 pt-8 border-t border-[#d4af37]/30">
-          <p className="text-sm text-[#4b5563] mb-3">{getSafeText(t, 'landingSections.documents.formatsTitle', 'Supported file formats:')}</p>
+          <p className="text-sm text-[#4b5563] mb-3">{getSafeText(t, 'documents.formats', 'Supported file formats:')}</p>
           <div className="flex flex-wrap justify-center gap-2">
             {['PDF', 'JPG', 'PNG', 'WEBP', 'HEIC'].map((format) => (
               <span key={format} className="inline-flex items-center px-3 py-1 rounded-full border border-[#d4af37]/50 text-[#4b5563] text-sm">

@@ -17,8 +17,8 @@ export function FAQSection({ id }: FAQSectionProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const faqs = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => ({
-    question: getSafeText(t, `landingSections.faq.items.${i}.question`, ''),
-    answer: getSafeText(t, `landingSections.faq.items.${i}.answer`, ''),
+    question: getSafeText(t, `faq.q${i + 1}`, ''),
+    answer: getSafeText(t, `faq.a${i + 1}`, ''),
   }));
 
   return (
@@ -26,13 +26,12 @@ export function FAQSection({ id }: FAQSectionProps) {
       <div className="container">
         <div className="text-center mb-12">
           <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-transparent text-[#d4af37] border border-[#d4af37] mb-4">
-            {getSafeText(t, 'landingSections.faq.badge', 'FAQ')}
+            {getSafeText(t, 'faq.label', 'FAQ')}
           </span>
           <h2 className="text-3xl md:text-4xl font-display font-semibold text-[#0f172a] mb-4">
-            {getSafeText(t, 'landingSections.faq.title', 'Frequently Asked Questions')}
+            {getSafeText(t, 'faq.title', 'Frequently Asked Questions')}
           </h2>
           <p className="text-[#4b5563] max-w-2xl mx-auto">
-            {getSafeText(t, 'landingSections.faq.subtitle', 'Find answers to the most important questions about Lexora.')}
           </p>
         </div>
 
@@ -61,9 +60,9 @@ export function FAQSection({ id }: FAQSectionProps) {
 
         <div className="text-center mt-12">
           <p className="text-[#4b5563]">
-            {getSafeText(t, 'landingSections.faq.contactCta', 'Still have questions?')}{' '}
+            {getSafeText(t, 'faq.contact_text', 'Still have questions?')}{' '}
             <a href="mailto:support@lexora.app" className="text-[#d4af37] hover:underline font-medium">
-              {getSafeText(t, 'landingSections.faq.contactLink', 'Contact us')}
+              {getSafeText(t, 'faq.contact', 'Contact us')}
             </a>
           </p>
         </div>

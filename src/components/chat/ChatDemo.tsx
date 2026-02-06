@@ -16,11 +16,13 @@ import {
   Trash2,
   Loader2,
 } from 'lucide-react';
+import { useLanguageContext } from '@/contexts/LanguageContext';
 
 const DEMO_PREVIEW_KEY = 'lexora_demo_preview';
 
 export function ChatDemo() {
   const { user } = useAuth();
+  const { t } = useLanguageContext();
   const [chatStep, setChatStep] = useState<'welcome' | 'collecting' | 'confirming' | 'generating' | 'generated'>('welcome');
   const [collectingField, setCollectingField] = useState<'sender' | 'recipient' | 'subject' | 'content' | null>(null);
   const [hasDocument, setHasDocument] = useState(false);
@@ -45,7 +47,7 @@ export function ChatDemo() {
   }>>([
     {
       type: 'ai',
-      text: 'Ciao! Sono Lexora, il tuo assistente legale AI.\n\nPosso aiutarti a creare:\n• Lettere formali al datore di lavoro\n• Lettere al proprietario di casa\n• Lettere alle autorità scolastiche\n• Reclami e richieste ufficiali\n\nChe tipo di documento ti serve? Descrivimi la tua situazione.',
+      text: t('chat.welcome_message') || 'Hello, I\'m Lexora. Briefly describe your legal situation so I can see how I can help you.',
     },
   ]);
   const [inputText, setInputText] = useState('');
@@ -435,7 +437,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
     setMessages([
       {
         type: 'ai',
-        text: 'Ciao! Sono Lexora, il tuo assistente legale AI.\n\nPosso aiutarti a creare:\n• Lettere formali al datore di lavoro\n• Lettere al proprietario di casa\n• Lettere alle autorità scolastiche\n• Reclami e richieste ufficiali\n\nChe tipo di documento ti serve? Descrivimi la tua situazione.',
+        text: t('chat.welcome_message') || 'Hello, I\'m Lexora. Briefly describe your legal situation so I can see how I can help you.',
       },
     ]);
     setDraftText(null);
@@ -557,7 +559,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSend(); } }}
-            placeholder="Write here..."
+            placeholder={t('chat.placeholder') || 'Type here...'}
             className="flex-1 bg-transparent border-none outline-none px-4 text-[#1e293b] placeholder-[#999] min-w-0"
             style={{ fontSize: '16px' }}
           />
@@ -588,7 +590,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
             ) : (
               <Camera className="w-5 h-5" />
             )}
-            {isProcessingOCR ? 'Analisi...' : 'Scan document'}
+            {isProcessingOCR ? '...' : (t('chat.button_scan') || 'Scan document')}
           </button>
 
           <button
@@ -597,7 +599,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
             className="bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] py-3 px-2 sm:px-4 rounded-lg flex items-center justify-center gap-1 sm:gap-2 hover:border-[#d4af37] hover:bg-[#1e293b]/80 transition min-w-0 text-sm sm:text-base"
           >
             <Paperclip className="w-5 h-5" />
-            Upload file
+            {t('chat.button_upload') || 'Upload file'}
           </button>
 
           <button
@@ -611,7 +613,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
             }`}
           >
             <Copy className="w-5 h-5" />
-            Copy letter
+            {t('chat.button_copy') || 'Copy letter'}
           </button>
 
           <button
@@ -625,7 +627,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
             }`}
           >
             <Eye className="w-5 h-5 flex-shrink-0" />
-            Preview
+            {t('chat.button_preview') || 'Preview'}
           </button>
 
           <button
@@ -639,7 +641,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
             }`}
           >
             <Printer className="w-5 h-5 flex-shrink-0" />
-            Print
+            {t('chat.button_print') || 'Print'}
           </button>
 
           {hasDocument ? (
@@ -648,7 +650,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
               className="py-3 px-2 sm:px-4 rounded-lg flex items-center justify-center gap-1 sm:gap-2 transition min-w-0 text-sm sm:text-base bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]"
             >
               <Mail className="w-5 h-5 flex-shrink-0" />
-              Email
+              {t('chat.button_email') || 'Email'}
             </a>
           ) : (
             <button
@@ -657,7 +659,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
               className="py-3 px-2 sm:px-4 rounded-lg flex items-center justify-center gap-1 sm:gap-2 min-w-0 text-sm sm:text-base bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50"
             >
               <Mail className="w-5 h-5 flex-shrink-0" />
-              Email
+              {t('chat.button_email') || 'Email'}
             </button>
           )}
         </div>
@@ -669,7 +671,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
           className="w-full bg-gradient-to-b from-[#d4af37] to-[#b8941f] text-[#0f172a] font-semibold py-4 rounded-lg flex items-center justify-center gap-2 hover:from-[#f4d03f] hover:to-[#d4af37] transition shadow-lg border border-[#d4af37]"
         >
           <Trash2 className="w-5 h-5" />
-          Clear conversation
+          {t('chat.button_delete') || 'Clear conversation'}
         </button>
       </div>
 

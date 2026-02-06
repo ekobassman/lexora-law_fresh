@@ -19,7 +19,7 @@ const COUNTRIES = [
   { code: 'it', flag: '🇮🇹' },
   { code: 'fr', flag: '🇫🇷' },
   { code: 'es', flag: '🇪🇸' },
-  { code: 'uk', flag: '🇬🇧' },
+  { code: 'gb', flag: '🇬🇧' },
   { code: 'ua', flag: '🇺🇦' },
   { code: 'tr', flag: '🇹🇷' },
   { code: 'latam', flag: '🌎' },
@@ -30,13 +30,13 @@ export function TrustSecuritySection({ id }: TrustSecuritySectionProps) {
 
   const securityFeatures = [0, 1, 2, 3].map((i) => ({
     icon: [Shield, Lock, Server, Eye][i] as typeof Shield,
-    title: getSafeText(t, `landingSections.trust.features.${i}.title`, ''),
-    description: getSafeText(t, `landingSections.trust.features.${i}.description`, ''),
+    title: getSafeText(t, [`security.gdpr`, 'security.ssl', 'security.server', 'security.sharing'][i], ''),
+    description: getSafeText(t, [`security.gdpr_desc`, 'security.ssl_desc', 'security.server_desc', 'security.sharing_desc'][i], ''),
   }));
 
   const countries = COUNTRIES.map((c) => ({
     ...c,
-    name: getSafeText(t, `landingSections.trust.countries.${c.code}`, c.code.toUpperCase()),
+    name: getSafeText(t, `countries.${c.code}`, c.code.toUpperCase()),
   }));
 
   return (
@@ -44,13 +44,13 @@ export function TrustSecuritySection({ id }: TrustSecuritySectionProps) {
       <div className="container">
         <div className="text-center mb-12">
           <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-transparent text-[#d4af37] border border-[#d4af37] mb-4">
-            {getSafeText(t, 'landingSections.trust.badge', 'Security & Trust')}
+            {getSafeText(t, 'security.label', 'Security & Trust')}
           </span>
           <h2 className="text-3xl md:text-4xl font-display font-semibold text-white mb-4">
-            {getSafeText(t, 'landingSections.trust.title', 'Your data is safe with us')}
+            {getSafeText(t, 'security.title', 'Your data is safe with us')}
           </h2>
           <p className="text-[#9ca3af] max-w-2xl mx-auto">
-            {getSafeText(t, 'landingSections.trust.subtitle', 'Security and privacy are our top priorities.')}
+            {getSafeText(t, 'security.subtitle', 'Security and privacy are our top priorities.')}
           </p>
         </div>
 
@@ -79,7 +79,7 @@ export function TrustSecuritySection({ id }: TrustSecuritySectionProps) {
           </div>
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#1e293b] border border-[#d4af37]/40 min-h-[2.75rem]">
             <Shield className="h-5 w-5 shrink-0 text-[#d4af37]" strokeWidth={2} />
-            <span className="text-sm font-medium text-white">{getSafeText(t, 'landingSections.trust.certifications.gdpr', 'GDPR')}</span>
+            <span className="text-sm font-medium text-white">{getSafeText(t, 'security.cert_gdpr', 'GDPR')}</span>
           </div>
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#1e293b] border border-[#d4af37]/40 min-h-[2.75rem]">
             <Lock className="h-5 w-5 shrink-0 text-[#d4af37]" strokeWidth={2} />
@@ -91,10 +91,10 @@ export function TrustSecuritySection({ id }: TrustSecuritySectionProps) {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 mb-4">
               <Globe className="h-5 w-5 text-[#d4af37]" />
-              <span className="text-white font-medium">{getSafeText(t, 'landingSections.trust.countriesTitle', 'Supported Countries')}</span>
+              <span className="text-white font-medium">{getSafeText(t, 'countries.label', 'Supported Countries')}</span>
             </div>
             <p className="text-sm text-[#9ca3af] max-w-xl mx-auto">
-              {getSafeText(t, 'landingSections.trust.countriesSubtitle', 'Specially adapted to legal requirements in 11 countries worldwide:')}
+              {getSafeText(t, 'countries.title', 'Specially adapted to legal requirements in 11 countries worldwide:')}
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 max-w-4xl mx-auto justify-items-stretch">

@@ -31,12 +31,12 @@ export function Footer() {
               </li>
               <li>
                 <a href="#documents" className="text-[#9ca3af] hover:text-white text-sm transition-colors">
-                  {gt('footer.supportedDocuments', 'Supported documents')}
+                  {gt('footer.documents', 'Supported documents')}
                 </a>
               </li>
               <li>
                 <a href="#faq" className="text-[#9ca3af] hover:text-white text-sm transition-colors">
-                  {gt('nav.faq', 'FAQ')}
+                  {gt('footer.faq', 'FAQ')}
                 </a>
               </li>
             </ul>
@@ -46,7 +46,7 @@ export function Footer() {
             <ul className="space-y-3">
               <li>
                 <a href="mailto:support@lexora.app" className="text-[#9ca3af] hover:text-white text-sm transition-colors">
-                  {gt('footer.aboutUs', 'About us')}
+                  {gt('footer.about', 'About us')}
                 </a>
               </li>
               <li>
@@ -57,7 +57,7 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h4 className="font-bold text-white text-sm uppercase tracking-wide mb-4">{gt('footer.legal', 'Legal')}</h4>
+            <h4 className="font-bold text-white text-sm uppercase tracking-wide mb-4">{gt('footer.legal_title', 'Legal')}</h4>
             <ul className="space-y-3">
               <li>
                 <Link to="/privacy" className="text-[#9ca3af] hover:text-white text-sm transition-colors">
@@ -76,12 +76,12 @@ export function Footer() {
             <ul className="space-y-3">
               <li>
                 <a href="mailto:support@lexora.app" className="text-[#9ca3af] hover:text-white text-sm transition-colors">
-                  {gt('footer.helpCenter', 'Help')}
+                  {gt('footer.help', 'Help')}
                 </a>
               </li>
               <li>
                 <a href="mailto:support@lexora.app" className="text-[#9ca3af] hover:text-white text-sm transition-colors">
-                  support@lexora.app
+                  {gt('footer.email', 'support@lexora-law.com')}
                 </a>
               </li>
             </ul>
@@ -95,7 +95,7 @@ export function Footer() {
                 <span className="font-display text-sm font-semibold text-[#d4af37]" style={{ fontFamily: 'Georgia, serif' }}>L</span>
               </div>
               <span className="font-display text-lg font-medium tracking-widest text-white uppercase">LEXORA</span>
-              <span className="text-[#9ca3af] text-sm">© {new Date().getFullYear()}</span>
+              <span className="text-[#9ca3af] text-sm">{gt('footer.copyright', '© 2026 Lexora').replace('2026', String(new Date().getFullYear()))}</span>
             </div>
             <div className="flex items-center gap-4">
               <a
@@ -122,7 +122,7 @@ export function Footer() {
           <div className="flex items-start gap-3 rounded-lg bg-[#1e293b] p-4 max-w-3xl mx-auto">
             <Shield className="h-5 w-5 flex-shrink-0 text-[#d4af37] mt-0.5" />
             <p className="text-xs text-[#9ca3af] leading-relaxed">
-              {gt('footer.disclaimerText', 'Lexora uses AI to assist with legal documents. Always verify important decisions with a professional.')}
+              {gt('footer.disclaimer_text', 'Lexora uses AI to assist with legal documents. Always verify important decisions with a professional.')}
             </p>
           </div>
         </div>

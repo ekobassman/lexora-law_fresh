@@ -48,7 +48,7 @@ export function Navbar() {
                 {t('nav.howItWorks') || 'How it works'}
               </button>
               <button onClick={() => scrollToSection('pricing')} className="text-ivory/70 hover:text-gold transition-colors text-sm font-medium">
-                {t('nav.pricing')}
+                {t('footer.pricing')}
               </button>
               <button onClick={() => scrollToSection('faq')} className="text-ivory/70 hover:text-gold transition-colors text-sm font-medium">
                 {t('nav.faq') || 'FAQ'}
@@ -104,21 +104,21 @@ export function Navbar() {
                       className="block px-4 py-2 text-sm text-white hover:bg-white/5"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      {t('nav.pricing')}
+                      {t('footer.pricing')}
                     </Link>
                     <Link
                       to="/auth"
                       className="block px-4 py-2 text-sm text-white hover:bg-white/5"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      {t('nav.login')}
+                      {t('header.login')}
                     </Link>
                     <Link
                       to="/auth?mode=signup"
                       className="block px-4 py-2 text-sm font-medium text-gold"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      {t('nav.signup')}
+                      {t('header.signup')}
                     </Link>
                   </>
                 )}
@@ -145,7 +145,7 @@ export function Navbar() {
                 {t('nav.howItWorks') || 'How it works'}
               </button>
               <button onClick={() => scrollToSection('pricing')} className="block py-3 text-left text-white w-full">
-                {t('nav.pricing')}
+                {t('footer.pricing')}
               </button>
               <button onClick={() => scrollToSection('faq')} className="block py-3 text-left text-white w-full">
                 {t('nav.faq') || 'FAQ'}
@@ -176,17 +176,17 @@ export function Navbar() {
                 {t('nav.home')}
               </Link>
               <Link to="/pricing" className="block py-3 text-white" onClick={() => setMobileOpen(false)}>
-                {t('nav.pricing')}
+                {t('footer.pricing')}
               </Link>
               <Link to="/auth" className="block py-3 text-white" onClick={() => setMobileOpen(false)}>
-                {t('nav.login')}
+                {t('header.login')}
               </Link>
               <Link
                 to="/auth?mode=signup"
                 className="block py-3 font-medium text-gold"
                 onClick={() => setMobileOpen(false)}
               >
-                {t('nav.signup')}
+                {t('header.signup')}
               </Link>
             </>
           )}

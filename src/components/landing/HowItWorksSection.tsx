@@ -21,8 +21,8 @@ export function HowItWorksSection({ id }: HowItWorksSectionProps) {
     { icon: Send, number: '04', color: 'from-green-500 to-green-600' },
   ].map((s, i) => ({
     ...s,
-    title: getSafeText(t, `landingSections.howItWorks.steps.${i + 1}.title`, ['Upload', 'AI Analysis', 'Review & Adjust', 'Send'][i]),
-    description: getSafeText(t, `landingSections.howItWorks.steps.${i + 1}.description`, ''),
+    title: getSafeText(t, `how_it_works.step${i + 1}_title`, ['Upload', 'AI Analysis', 'Review & Adjust', 'Send'][i]),
+    description: getSafeText(t, `how_it_works.step${i + 1}_desc`, ''),
   }));
 
   return (
@@ -30,13 +30,13 @@ export function HowItWorksSection({ id }: HowItWorksSectionProps) {
       <div className="container">
         <div className="text-center mb-16">
           <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-transparent text-[#d4af37] border border-[#d4af37] mb-4">
-            {getSafeText(t, 'landingSections.howItWorks.badge', 'How It Works')}
+            {getSafeText(t, 'how_it_works.label', 'How It Works')}
           </span>
           <h2 className="text-3xl md:text-4xl font-display font-semibold text-white mb-4">
-            {getSafeText(t, 'landingSections.howItWorks.title', 'Your response in 4 easy steps')}
+            {getSafeText(t, 'how_it_works.title', 'Your response in 4 easy steps')}
           </h2>
           <p className="text-[#9ca3af] max-w-2xl mx-auto">
-            {getSafeText(t, 'landingSections.howItWorks.subtitle', 'From official letter to professional response.')}
+            {getSafeText(t, 'how_it_works.subtitle', 'From official letter to professional response.')}
           </p>
         </div>
 
@@ -71,7 +71,7 @@ export function HowItWorksSection({ id }: HowItWorksSectionProps) {
 
         <div className="text-center mt-12 pt-8 border-t border-[#d4af37]/20">
           <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-transparent border border-[#d4af37]/50">
-            <span className="text-[#d4af37] font-semibold">{getSafeText(t, 'landingSections.howItWorks.timeIndicator', '⏱️ Average time: 5-10 minutes')}</span>
+            <span className="text-[#d4af37] font-semibold">{getSafeText(t, 'how_it_works.time_badge', '⏱️ Average time: 5-10 minutes')}</span>
           </div>
         </div>
       </div>

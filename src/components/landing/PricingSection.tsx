@@ -19,17 +19,17 @@ export function PricingSection({ id }: PricingSectionProps) {
   const { t } = useLanguageContext();
 
   const plans = [
-    { key: 'free', monthlyPrice: 0, yearlyPrice: 0, icon: Zap, popular: false },
-    { key: 'starter', monthlyPrice: 3.99, yearlyPrice: 39.9, icon: Sparkles, popular: false },
-    { key: 'pro', monthlyPrice: 9.99, yearlyPrice: 99.9, icon: Building2, popular: true },
-    { key: 'unlimited', monthlyPrice: 19.99, yearlyPrice: 199.9, icon: Crown, popular: false },
+    { key: 'free', monthlyPrice: 0, yearlyPrice: 0, icon: Zap, popular: false, features: 4 },
+    { key: 'starter', monthlyPrice: 3.99, yearlyPrice: 39.9, icon: Sparkles, popular: false, features: 4 },
+    { key: 'pro', monthlyPrice: 9.99, yearlyPrice: 99.9, icon: Building2, popular: true, features: 4 },
+    { key: 'unlimited', monthlyPrice: 19.99, yearlyPrice: 199.9, icon: Crown, popular: false, features: 5 },
   ].map((p) => ({
     ...p,
-    name: getSafeText(t, `landingSections.pricing.plans.${p.key}.name`, p.key),
-    description: getSafeText(t, `landingSections.pricing.plans.${p.key}.description`, ''),
-    cta: getSafeText(t, `landingSections.pricing.plans.${p.key}.cta`, 'Choose'),
+    name: getSafeText(t, `pricing.${p.key}`, p.key),
+    description: getSafeText(t, `pricing.${p.key}_desc`, ''),
+    cta: getSafeText(t, `pricing.cta_${p.key}`, 'Choose'),
     ctaLink: p.key === 'free' ? '/auth?mode=signup' : `/auth?mode=signup&plan=${p.key}`,
-    features: [0, 1, 2, 3, 4].map((i) => getSafeText(t, `landingSections.pricing.plans.${p.key}.features.${i}`, '')).filter(Boolean),
+    features: Array.from({ length: p.features }, (_, i) => getSafeText(t, `pricing.${p.key}_feature${i + 1}`, '')).filter(Boolean),
   }));
 
   return (
@@ -37,18 +37,18 @@ export function PricingSection({ id }: PricingSectionProps) {
       <div className="container">
         <div className="text-center mb-12">
           <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-transparent text-[#d4af37] border border-[#d4af37] mb-4">
-            {getSafeText(t, 'landingSections.pricing.badge', 'Pricing')}
+            {getSafeText(t, 'pricing.title', 'Pricing')}
           </span>
           <h2 className="text-3xl md:text-4xl font-display font-semibold text-[#0f172a] mb-4">
-            {getSafeText(t, 'landingSections.pricing.title', 'Transparent pricing, no hidden costs')}
+            {getSafeText(t, 'pricing.title', 'Transparent pricing, no hidden costs')}
           </h2>
           <p className="text-[#4b5563] max-w-2xl mx-auto mb-8">
-            {getSafeText(t, 'landingSections.pricing.subtitle', 'Choose the plan that fits your needs.')}
+            {getSafeText(t, 'pricing.subtitle', 'Choose the plan that fits your needs.')}
           </p>
 
           <div className="flex items-center justify-center gap-3">
             <span className={`text-sm ${!isYearly ? 'text-navy font-semibold' : 'text-navy/60'}`}>
-              {getSafeText(t, 'landingSections.pricing.monthly', 'Monthly')}
+              {getSafeText(t, 'pricing.monthly', 'Monthly')}
             </span>
             <button
               type="button"
@@ -60,11 +60,11 @@ export function PricingSection({ id }: PricingSectionProps) {
               <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition ${isYearly ? 'translate-x-5' : 'translate-x-1'}`} />
             </button>
             <span className={`text-sm ${isYearly ? 'text-navy font-semibold' : 'text-navy/60'}`}>
-              {getSafeText(t, 'landingSections.pricing.yearly', 'Yearly')}
+              {getSafeText(t, 'pricing.yearly', 'Yearly')}
             </span>
             {isYearly && (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
-                {getSafeText(t, 'landingSections.pricing.save', '2 months free')}
+                {getSafeText(t, 'pricing.save', '2 months free')}
               </span>
             )}
           </div>
@@ -74,7 +74,7 @@ export function PricingSection({ id }: PricingSectionProps) {
           {plans.map((plan) => {
             const Icon = plan.icon;
             const price = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
-            const period = isYearly ? getSafeText(t, 'landingSections.pricing.perYear', '/year') : getSafeText(t, 'landingSections.pricing.perMonth', '/month');
+            const period = isYearly ? '/year' : '/month';
             return (
               <Card
                 key={plan.key}
@@ -85,7 +85,7 @@ export function PricingSection({ id }: PricingSectionProps) {
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="inline-flex items-center px-4 py-1 rounded-full text-xs font-semibold bg-[#d4af37] text-black">
-                      {getSafeText(t, 'landingSections.pricing.popular', 'Popular')}
+                      {getSafeText(t, 'pricing.pro_badge', 'Popular')}
                     </span>
                   </div>
                 )}
@@ -99,7 +99,7 @@ export function PricingSection({ id }: PricingSectionProps) {
                 <CardContent className="flex-1 min-h-0">
                   <div className="text-center mb-6">
                     <span className="text-4xl font-bold text-[#0f172a]">
-                      {price === 0 ? getSafeText(t, 'landingSections.pricing.free', 'Free') : `€${price.toFixed(2).replace('.', ',')}`}
+                      {price === 0 ? getSafeText(t, 'pricing.free_price', 'Free') : `€${price.toFixed(2).replace('.', ',')}`}
                     </span>
                     {price > 0 && <span className="text-[#4b5563] text-sm">{period}</span>}
                   </div>
@@ -126,7 +126,7 @@ export function PricingSection({ id }: PricingSectionProps) {
         </div>
 
         <p className="text-center text-sm text-[#4b5563] mt-8">
-          {getSafeText(t, 'landingSections.pricing.trustNote', 'No credit card required for the free plan. Cancel anytime.')}
+          {getSafeText(t, 'pricing.note', 'No credit card required for the free plan. Cancel anytime.')}
         </p>
       </div>
     </section>

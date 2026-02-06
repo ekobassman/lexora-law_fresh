@@ -22,10 +22,10 @@ function getSafeText(t: (key: string) => string, key: string, fallback: string):
 }
 
 const archiveCards = [
-  { icon: Shield, titleKey: 'home.archive.card1.title', textKey: 'home.archive.card1.text' },
-  { icon: FolderOpen, titleKey: 'home.archive.card2.title', textKey: 'home.archive.card2.text' },
-  { icon: Sparkles, titleKey: 'home.archive.card3.title', textKey: 'home.archive.card3.text' },
-  { icon: Calendar, titleKey: 'home.archive.card4.title', textKey: 'home.archive.card4.text' },
+  { icon: Shield, titleKey: 'archive.feature1', textKey: 'archive.feature1_desc' },
+  { icon: FolderOpen, titleKey: 'archive.feature2', textKey: 'archive.feature2_desc' },
+  { icon: Sparkles, titleKey: 'archive.feature3', textKey: 'archive.feature3_desc' },
+  { icon: Calendar, titleKey: 'archive.feature4', textKey: 'archive.feature4_desc' },
 ];
 
 export function Home() {
@@ -57,24 +57,24 @@ export function Home() {
             <div className="flex flex-wrap justify-center gap-3">
               <span className="inline-flex items-center gap-2 bg-[#0f172a] text-white px-6 py-3 rounded-full text-sm font-medium">
                 <Globe className="h-4 w-4 text-white" />
-                {getSafeText(t, 'landing.badge.europe', 'DE · AT · CH')}
+                {getSafeText(t, 'hero.badge1', 'DE · AT · CH')}
               </span>
               <span className="inline-flex items-center gap-2 bg-[#0f172a] text-white px-6 py-3 rounded-full text-sm font-medium">
                 <Sparkles className="h-4 w-4 text-white" />
-                {getSafeText(t, 'landing.badge.laws', 'AI based on national laws')}
+                {getSafeText(t, 'hero.badge2', 'AI based on national laws')}
               </span>
               <span className="inline-flex items-center gap-2 bg-[#0f172a] text-white px-6 py-3 rounded-full text-sm font-medium">
                 <Clock className="h-4 w-4 text-white" />
-                {getSafeText(t, 'landing.badge.fast', 'From letter to response in minutes')}
+                {getSafeText(t, 'hero.badge3', 'From letter to response in minutes')}
               </span>
             </div>
 
             <h1 className="text-[48px] md:text-[56px] font-display font-normal md:font-medium text-[#0f172a] leading-[1.2] whitespace-pre-line max-w-4xl mx-auto">
-              {getSafeText(t, 'landing.hero.title', 'Understand official letters.\nRespond with confidence.')}
+              {getSafeText(t, 'hero.title', 'Understand official letters.\nRespond with confidence.')}
             </h1>
 
             <p className="text-lg md:text-[18px] text-[#4b5563] max-w-2xl mx-auto leading-relaxed">
-              {getSafeText(t, 'landing.hero.subtitle', 'Lexora helps you understand official communications in your country, explains what is required in clear terms, and prepares the correct response based on local regulations.')}
+              {getSafeText(t, 'hero.subtitle', 'Lexora helps you understand official communications in your country, explains what is required in clear terms, and prepares the correct response based on local regulations.')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
@@ -89,7 +89,7 @@ export function Home() {
                 to="/auth"
                 className="inline-flex items-center justify-center border-2 border-[#0f172a] text-[#0f172a] bg-transparent hover:bg-[#0f172a] hover:text-white font-semibold px-8 py-4 rounded-lg text-base transition"
               >
-                {getSafeText(t, 'landing.cta.login', 'Login')}
+                {getSafeText(t, 'hero.cta_secondary', 'Login')}
               </Link>
             </div>
           </div>
@@ -126,10 +126,10 @@ export function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <h2 className="text-3xl md:text-4xl font-display font-semibold text-white mb-2">
-              {getSafeText(t, 'home.archive.title', 'Your secure case archive')}
+              {getSafeText(t, 'archive.title', 'Your secure case archive')}
             </h2>
             <p className="text-[#d4af37] max-w-2xl mx-auto">
-              {getSafeText(t, 'home.archive.subtitle', 'All your cases, documents and legal proceedings in one secure place.')}
+              {getSafeText(t, 'archive.subtitle', 'All your cases, documents and legal proceedings in one secure place.')}
             </p>
           </div>
 
@@ -160,7 +160,7 @@ export function Home() {
               to="/auth?mode=signup"
               className="inline-flex items-center justify-center gap-2 bg-[#d4af37] text-black hover:bg-[#b8941d] font-semibold px-8 py-4 rounded-lg transition"
             >
-              {getSafeText(t, 'landing.cta.start', 'Start now')}
+              {getSafeText(t, 'archive.cta', 'Start now')}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

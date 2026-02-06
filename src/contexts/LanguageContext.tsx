@@ -9,7 +9,6 @@ import {
 import { useTranslation } from 'react-i18next';
 
 export type Language =
-  | 'ar'
   | 'de'
   | 'en'
   | 'es'
@@ -19,7 +18,6 @@ export type Language =
   | 'pl'
   | 'pt'
   | 'ro'
-  | 'ru'
   | 'tr'
   | 'uk';
 
@@ -33,11 +31,10 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const SUPPORTED: Language[] = ['ar', 'de', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'ro', 'ru', 'tr', 'uk'];
+const SUPPORTED: Language[] = ['de', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'ro', 'tr', 'uk'];
 
 /** Emoji bandiere per ogni lingua (per UI compatta) */
 export const LANGUAGE_FLAGS: Record<Language, string> = {
-  ar: '🇸🇦',
   de: '🇩🇪',
   en: '🇬🇧',
   es: '🇪🇸',
@@ -47,13 +44,11 @@ export const LANGUAGE_FLAGS: Record<Language, string> = {
   pl: '🇵🇱',
   pt: '🇵🇹',
   ro: '🇷🇴',
-  ru: '🇷🇺',
   tr: '🇹🇷',
   uk: '🇺🇦',
 };
 
 export const LANGUAGE_NAMES: Record<Language, string> = {
-  ar: 'العربية',
   de: 'Deutsch',
   en: 'English',
   es: 'Español',
@@ -63,7 +58,6 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
   pl: 'Polski',
   pt: 'Português',
   ro: 'Română',
-  ru: 'Русский',
   tr: 'Türkçe',
   uk: 'Українська',
 };
@@ -77,7 +71,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
-    return 'en';
+    return 'de';
   });
 
   useEffect(() => {
