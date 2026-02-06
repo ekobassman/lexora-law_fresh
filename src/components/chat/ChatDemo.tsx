@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import Tesseract from 'tesseract.js';
 import {
   Scale,
   Mic,
@@ -211,143 +212,78 @@ Cordiali saluti,
 
   const handleCamera = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) {
-      setMessages((prev) => [...prev, { type: 'ai', text: '❌ Nessun file selezionato' }]);
-      return;
-    }
-
-    setMessages((prev) => [
-      ...prev,
-      { type: 'user', text: '📸 Documento scannerizzato' },
-      { type: 'ai', text: `📁 File: ${file.name} (${(file.size / 1024).toFixed(1)} KB)` },
-    ]);
+    if (!file) return;
 
     setIsProcessingOCR(true);
+    setMessages((prev) => [
+      ...prev,
+      { type: 'user', text: '📸 Scansione documento...' },
+      { type: 'ai', text: '⏳ Analisi in corso... 0%' },
+    ]);
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const base64 = event.target?.result as string;
-
-        if (!base64) {
-          setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore: base64 vuoto' }]);
-          setIsProcessingOCR(false);
-          e.target.value = '';
-          return;
-        }
-
-        setMessages((prev) => [
-          ...prev,
-          { type: 'ai', text: `🔄 Base64 generato (${base64.length} caratteri)` },
-        ]);
-
-        if (!base64.startsWith('data:image')) {
-          setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore: formato non valido' }]);
-          setIsProcessingOCR(false);
-          e.target.value = '';
-          return;
-        }
-
-        setMessages((prev) => [...prev, { type: 'ai', text: '⏳ Chiamata OpenAI...' }]);
-
-        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-        if (!apiKey) {
-          setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore: API Key mancante nel .env' }]);
-          setIsProcessingOCR(false);
-          e.target.value = '';
-          return;
-        }
-
-        try {
-          const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              messages: [
-                {
-                  role: 'user',
-                  content: [
-                    {
-                      type: 'text',
-                      text: 'Cosa vedi in questa immagine? Descrivi il documento.',
-                    },
-                    { type: 'image_url', image_url: { url: base64 } },
-                  ],
-                },
-              ],
-              max_tokens: 500,
-            }),
-          });
-
-          setMessages((prev) => [
-            ...prev,
-            { type: 'ai', text: `📡 Status: ${response.status} ${response.statusText}` },
-          ]);
-
-          if (!response.ok) {
-            const errorText = await response.text();
+    try {
+      const result = await Tesseract.recognize(file, 'ita+eng', {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
             setMessages((prev) => [
-              ...prev,
-              {
-                type: 'ai',
-                text: `❌ Errore OpenAI: ${response.status}\n${errorText.substring(0, 200)}`,
-              },
+              ...prev.slice(0, -1),
+              { type: 'ai', text: `⏳ Analisi in corso... ${Math.round(m.progress * 100)}%` },
             ]);
-            setIsProcessingOCR(false);
-            e.target.value = '';
-            return;
           }
+        },
+      });
 
-          const result = await response.json();
-          const content = result.choices?.[0]?.message?.content ?? 'Nessuna risposta';
+      const extractedText = result.data.text;
+      console.log('Testo estratto:', extractedText);
 
-          setMessages((prev) => [
-            ...prev,
-            { type: 'ai', text: `✅ Risposta ricevuta:\n${content}` },
-          ]);
+      const lines = extractedText.split('\n').filter((l) => l.trim());
+      const firstLine = lines[0] || 'Documento';
+      const hasDate = extractedText.match(/\d{1,2}[\/.]\d{1,2}[\/.]\d{2,4}/);
+      const date = hasDate ? hasDate[0] : new Date().toISOString().split('T')[0];
 
-          const analysis: Record<string, string> = {
-            documentType: 'Lettera',
-            sender: 'Vedi sopra',
-            recipient: 'Vedi sopra',
-            date: new Date().toISOString().split('T')[0],
-            subject: content.substring(0, 50),
-          };
-          setOcrResult(analysis);
-          setDocumentData({
-            type: 'response_letter',
-            sender: '',
-            recipient: analysis.recipient ?? '',
-            date: analysis.date ?? new Date().toISOString().split('T')[0],
-            subject: `Risposta a: ${analysis.subject || 'Documento'}`,
-            content: '',
-          });
-          setChatStep('collecting');
-          setCollectingField('sender');
-        } catch (fetchErr) {
-          const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
-          setMessages((prev) => [...prev, { type: 'ai', text: `❌ Errore fetch: ${msg}` }]);
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setMessages((prev) => [...prev, { type: 'ai', text: `❌ Errore: ${msg}` }]);
-      } finally {
-        setIsProcessingOCR(false);
-        e.target.value = '';
-      }
-    };
+      const sender =
+        lines.find((l) => l.toLowerCase().includes('da:'))?.replace(/da:/i, '').trim() || 'Non rilevato';
+      const recipient =
+        lines.find((l) => l.toLowerCase().includes('a:'))?.replace(/a:/i, '').trim() || 'Non rilevato';
 
-    reader.onerror = () => {
-      setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore lettura file' }]);
+      const analysis: Record<string, string> = {
+        documentType: 'Lettera',
+        sender,
+        recipient,
+        date,
+        subject: firstLine.substring(0, 50),
+        fullText: extractedText,
+      };
+
+      setOcrResult(analysis);
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: 'ai',
+          text: `✅ Documento analizzato!\n\n📄 Testo estratto:\n${extractedText.substring(0, 200)}${extractedText.length > 200 ? '...' : ''}\n\nVuoi che prepari una risposta?`,
+        },
+      ]);
+
+      setDocumentData({
+        type: 'response_letter',
+        sender: '',
+        recipient: recipient !== 'Non rilevato' ? recipient : '',
+        date: new Date().toISOString().split('T')[0],
+        subject: 'Risposta a documento',
+        content: '',
+      });
+      setChatStep('collecting');
+      setCollectingField('sender');
+    } catch (err) {
+      console.error('Tesseract error:', err);
+      setMessages((prev) => [
+        ...prev,
+        { type: 'ai', text: '❌ Errore nella lettura. Prova con una foto più nitida.' },
+      ]);
+    } finally {
       setIsProcessingOCR(false);
-      e.target.value = '';
-    };
-
-    reader.readAsDataURL(file);
+    }
+    e.target.value = '';
   };
 
   const handleClear = () => {
