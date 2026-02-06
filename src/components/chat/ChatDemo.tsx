@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
 import {
   Scale,
   Mic,
@@ -213,6 +212,7 @@ Cordiali saluti,
   const handleCamera = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!validTypes.includes(file.type)) {
       setMessages((prev) => [...prev, { type: 'ai', text: '❌ Formato non supportato. Usa JPG o PNG.' }]);
@@ -221,100 +221,91 @@ Cordiali saluti,
     }
 
     setIsProcessingOCR(true);
-    setMessages((prev) => [...prev, { type: 'user', text: '📸 Documento scannerizzato' }]);
+    setMessages((prev) => [...prev, { type: 'user', text: '📸 Analisi documento in corso...' }]);
 
-    try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
-
-      if (!base64.startsWith('data:image')) {
-        console.warn('OCR: base64 deve iniziare con data:image/..., ricevuto:', base64?.slice(0, 50));
-      }
-
-      let data: { ok?: boolean; analysis?: Record<string, string> } | null = null;
-      let error: unknown = null;
-
+    const reader = new FileReader();
+    reader.onload = async (event) => {
       try {
-        const result = await supabase.functions.invoke('process-ocr', {
-          body: { imageBase64: base64 },
-          headers: user ? {} : { 'X-Demo-Mode': 'true' },
-        });
-        data = result.data;
-        error = result.error;
-        console.log('OCR Response:', { data, error });
-      } catch (invokeErr) {
-        console.error('OCR invoke error:', invokeErr);
-        error = invokeErr;
-      }
-
-      if (error) {
-        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-        if (apiKey && base64.startsWith('data:image')) {
-          console.log('OCR: fallback a OpenAI diretto (Edge Function non disponibile)');
-          const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              max_tokens: 1024,
-              messages: [
-                {
-                  role: 'user',
-                  content: [
-                    {
-                      type: 'text',
-                      text: 'Analizza questo documento ed estrai: documentType, sender, recipient, date, subject. Rispondi solo in JSON con queste chiavi.',
-                    },
-                    { type: 'image_url', image_url: { url: base64 } },
-                  ],
-                },
-              ],
-            }),
-          });
-          const result = await response.json();
-          if (result.choices?.[0]?.message?.content) {
-            const content = result.choices[0].message.content.trim();
-            let analysis: Record<string, string> = {
-              documentType: 'Lettera',
-              sender: 'Non rilevato',
-              recipient: 'Non rilevato',
-              date: new Date().toISOString().slice(0, 10),
-              subject: 'Non rilevato',
-            };
-            try {
-              const cleaned = content.replace(/```json\n?|\n?```/g, '').trim();
-              const parsed = JSON.parse(cleaned);
-              if (typeof parsed === 'object') analysis = { ...analysis, ...parsed };
-            } catch {
-              analysis.fullText = content;
-            }
-            data = { ok: true, analysis };
-          }
+        const base64 = event.target?.result as string;
+        if (!base64 || !base64.startsWith('data:image')) {
+          setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore nel caricamento immagine' }]);
+          setIsProcessingOCR(false);
+          e.target.value = '';
+          return;
         }
-      }
 
-      const analysis = (data?.analysis ?? data) as Record<string, string> | undefined;
-      if (data?.ok && analysis && typeof analysis === 'object') {
-        const docType = analysis.documentType ?? 'Lettera';
-        const sender = analysis.sender ?? 'Non rilevato';
-        const recipient = analysis.recipient ?? 'Non rilevato';
-        const date = analysis.date ?? new Date().toISOString().split('T')[0];
-        const subject = analysis.subject ?? 'Non rilevato';
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        if (!apiKey) {
+          setMessages((prev) => [...prev, { type: 'ai', text: '❌ VITE_OPENAI_API_KEY non configurata nel .env' }]);
+          setIsProcessingOCR(false);
+          e.target.value = '';
+          return;
+        }
 
-        setOcrResult(analysis as Record<string, string>);
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: 'Estrai da questo documento: documentType (tipo), sender (mittente), recipient (destinatario), date (data), subject (oggetto). Rispondi SOLO in JSON valido.',
+              },
+              {
+                role: 'user',
+                content: [{ type: 'image_url', image_url: { url: base64 } }],
+              },
+            ],
+            max_tokens: 1000,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error('OpenAI error:', errorData);
+          setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore analisi. Riprova.' }]);
+          setIsProcessingOCR(false);
+          e.target.value = '';
+          return;
+        }
+
+        const result = await response.json();
+        const content = result.choices?.[0]?.message?.content ?? '';
+
+        let analysis: Record<string, string>;
+        try {
+          const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || content.match(/{[\s\S]*?}/);
+          analysis = jsonMatch
+            ? JSON.parse(jsonMatch[1] || jsonMatch[0])
+            : {
+                documentType: 'Lettera',
+                sender: 'Non rilevato',
+                recipient: 'Non rilevato',
+                date: new Date().toISOString().split('T')[0],
+                subject: 'Non rilevato',
+              };
+        } catch {
+          analysis = {
+            documentType: 'Lettera',
+            sender: 'Non rilevato',
+            recipient: 'Non rilevato',
+            date: new Date().toISOString().split('T')[0],
+            subject: 'Non rilevato',
+            fullText: content,
+          };
+        }
+
+        setOcrResult(analysis);
         setDocumentData({
           type: 'response_letter',
           sender: '',
-          recipient: sender || '',
-          date,
-          subject: `Risposta a: ${subject || 'Documento'}`,
+          recipient: analysis.recipient ?? analysis.sender ?? '',
+          date: analysis.date ?? new Date().toISOString().split('T')[0],
+          subject: `Risposta a: ${analysis.subject || 'Documento'}`,
           content: '',
         });
         setChatStep('collecting');
@@ -324,20 +315,25 @@ Cordiali saluti,
           ...prev,
           {
             type: 'ai',
-            text: `✅ Ho analizzato il documento! Ecco cosa ho trovato:\n\n📄 Tipo: ${docType}\n✍️ Da: ${sender}\n📧 A: ${recipient}\n📅 Data: ${date}\n📝 Oggetto: ${subject}\n\nVuoi generare una risposta a questo documento? Indicami i dati mancanti: come ti chiami? (mittente)`,
+            text: `✅ Documento analizzato!\n\n📄 Tipo: ${analysis.documentType ?? 'Lettera'}\n✍️ Da: ${analysis.sender ?? 'Non rilevato'}\n📧 A: ${analysis.recipient ?? 'Non rilevato'}\n📅 Data: ${analysis.date ?? '—'}\n📝 Oggetto: ${analysis.subject ?? 'Non rilevato'}\n\nVuoi generare una risposta? Indicami i dati mancanti: come ti chiami? (mittente)`,
           },
         ]);
-      } else {
-        console.error('OCR: risposta non valida', { data, error });
-        setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore nella lettura del documento. Riprova con una foto più nitida.' }]);
+      } catch (err) {
+        console.error('OCR Error:', err);
+        setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore imprevisto. Riprova.' }]);
+      } finally {
+        setIsProcessingOCR(false);
+        e.target.value = '';
       }
-    } catch (err) {
-      console.error('OCR Error:', err);
-      setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore nella lettura del documento. Riprova con una foto più nitida.' }]);
-    } finally {
+    };
+
+    reader.onerror = () => {
+      setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore nel caricamento del file.' }]);
       setIsProcessingOCR(false);
-    }
-    e.target.value = '';
+      e.target.value = '';
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const handleClear = () => {
