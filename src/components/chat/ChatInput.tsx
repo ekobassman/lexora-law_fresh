@@ -23,7 +23,7 @@ export function ChatInput({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 bg-[#0f172a] border-t border-[rgba(212,175,55,0.2)]">
+    <form onSubmit={handleSubmit} className="p-4 bg-graphite border-t-2 border-gold/20">
       <div className="flex gap-2">
         <input
           type="text"
@@ -31,12 +31,12 @@ export function ChatInput({
           onChange={(e) => setValue(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 bg-[#1e293b] border border-[rgba(212,175,55,0.3)] rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-[#d4af37]"
+          className="flex-1 bg-navy/50 border-2 border-gold/30 rounded-lg px-4 py-3 text-ivory placeholder-ivory/50 focus:outline-none focus:border-gold"
         />
         <button
           type="submit"
           disabled={disabled || !value.trim()}
-          className="bg-[#d4af37] text-[#0f172a] p-3 rounded-lg hover:bg-[#f4d03f] transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-gold text-navy p-3 rounded-lg hover:bg-gold/90 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
         >
           <Send className="w-5 h-5" />
         </button>

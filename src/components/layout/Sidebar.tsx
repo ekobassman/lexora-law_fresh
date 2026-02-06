@@ -26,18 +26,19 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        'w-64 shrink-0 border-r border-navy-light bg-navy/30 p-4 flex flex-col',
+        'w-64 shrink-0 border-r-2 border-gold/20 bg-graphite p-4 flex flex-col',
         className
       )}
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold">Pratiche</h3>
+        <h3 className="font-display font-semibold text-ivory">Pratiche</h3>
         {onNewCase && (
           <Button
             variant="outline"
             size="sm"
             onClick={onNewCase}
             disabled={creating}
+            className="border-gold/40 text-gold hover:bg-gold/10 hover:border-gold/60"
           >
             {creating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -49,7 +50,7 @@ export function Sidebar({
       </div>
 
       {loading && (
-        <p className="text-sm text-muted-foreground py-4">Caricamento...</p>
+        <p className="text-sm text-ivory/60 py-4">Caricamento...</p>
       )}
       {error && (
         <p className="text-sm text-destructive py-2">{error}</p>
@@ -62,11 +63,11 @@ export function Sidebar({
               <Link
                 to={`/cases/${c.id}`}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-navy-light transition-colors',
-                  id === c.id && 'bg-navy-light font-medium'
+                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ivory/90 hover:bg-gold/10 hover:text-ivory border border-transparent hover:border-gold/20 transition-all',
+                  id === c.id && 'bg-gold/20 text-ivory font-medium border-gold/30'
                 )}
               >
-                <FileText className="h-4 w-4 shrink-0" />
+                <FileText className="h-4 w-4 shrink-0 text-gold" />
                 <span className="truncate">{c.title}</span>
               </Link>
             </li>
@@ -74,7 +75,7 @@ export function Sidebar({
       </ul>
 
       {!loading && cases.length === 0 && !error && (
-        <p className="text-sm text-muted-foreground py-4">
+        <p className="text-sm text-ivory/60 py-4">
           Nessuna pratica. Clicca + per crearne una.
         </p>
       )}

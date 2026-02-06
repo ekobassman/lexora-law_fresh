@@ -366,20 +366,24 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
         const { data, error } = await supabase.functions.invoke('process-ocr', {
           body: { imageBase64, mimeType },
         });
-        if (!error && data?.ok && data?.draft_text) {
-          analysis = {
-            documentType: data.documentType ?? data.analysis?.documentType ?? 'Lettera',
-            sender: data.sender ?? data.analysis?.sender ?? 'Non rilevato',
-            recipient: data.recipient ?? data.analysis?.recipient ?? 'Non rilevato',
-            date: data.date ?? data.analysis?.date ?? new Date().toISOString().split('T')[0],
-            subject: data.subject ?? data.analysis?.subject ?? 'Non rilevato',
-            fullText: data.analysis?.fullText ?? data.draft_text ?? '',
-          };
-          draft_text = data.draft_text;
-          usedApi = true;
-        } else {
-          throw new Error(data?.error ?? 'API non disponibile');
+        if (error) {
+          console.warn('[ChatDemo] process-ocr error:', error);
+          throw new Error(error.message ?? 'process-ocr failed');
         }
+        if (!data?.ok || !data?.draft_text) {
+          console.warn('[ChatDemo] process-ocr bad response:', data);
+          throw new Error(data?.error ?? 'Risposta non valida');
+        }
+        analysis = {
+          documentType: data.documentType ?? data.analysis?.documentType ?? 'Lettera',
+          sender: data.sender ?? data.analysis?.sender ?? 'Non rilevato',
+          recipient: data.recipient ?? data.analysis?.recipient ?? 'Non rilevato',
+          date: data.date ?? data.analysis?.date ?? new Date().toISOString().split('T')[0],
+          subject: data.subject ?? data.analysis?.subject ?? 'Non rilevato',
+          fullText: data.analysis?.fullText ?? data.draft_text ?? '',
+        };
+        draft_text = data.draft_text;
+        usedApi = true;
       } catch {
         const { analysis: tessAnalysis, extractedText } = await runTesseractFallback(file);
         analysis = tessAnalysis;

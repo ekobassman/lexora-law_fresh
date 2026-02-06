@@ -84,23 +84,26 @@ export function DocumentUpload({
           onDragLeave={handleDragLeave}
           onClick={() => inputRef.current?.click()}
           className={`
-            flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 cursor-pointer
-            transition-colors
-            ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-gold/50'}
-            ${dragOver ? 'border-gold bg-gold/10' : 'border-navy-light'}
+            flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 cursor-pointer
+            transition-all
+            ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-gold/60 hover:bg-gold/5'}
+            ${dragOver ? 'border-gold bg-gold/10' : 'border-gold/30 bg-white/80'}
           `}
         >
-          <Upload className="h-10 w-10 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground text-center">
+          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-gold/20 to-gold/5 border-2 border-gold/40 flex items-center justify-center">
+            <Upload className="h-6 w-6 text-gold" />
+          </div>
+          <p className="text-sm text-navy/80 text-center font-medium">
             Trascina un file qui o clicca per caricare
           </p>
-          <p className="text-xs text-muted-foreground">PDF, JPG, PNG, WebP (max {MAX_SIZE_MB}MB)</p>
+          <p className="text-xs text-navy/60">PDF, JPG, PNG, WebP (max {MAX_SIZE_MB}MB)</p>
         </div>
       ) : (
         <Button
           variant="outline"
           onClick={() => inputRef.current?.click()}
           disabled={disabled}
+          className="border-2 border-gold/40 text-gold hover:bg-gold/10 hover:border-gold/60"
         >
           <Upload className="h-4 w-4 mr-2" />
           Carica documento

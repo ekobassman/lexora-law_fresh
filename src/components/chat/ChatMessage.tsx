@@ -14,23 +14,23 @@ export function ChatMessage({ message }: ChatMessageProps) {
       <div
         className={cn(
           'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
-          isUser ? 'hidden' : 'bg-[#d4af37]'
+          isUser ? 'hidden' : 'bg-gradient-to-br from-gold/20 to-gold/5 border-2 border-gold/40'
         )}
       >
-        {!isUser && <Scale className="h-5 w-5 text-[#0f172a]" />}
+        {!isUser && <Scale className="h-5 w-5 text-gold" />}
       </div>
       <div
         className={cn(
-          'max-w-[80%] min-w-0 rounded-2xl px-4 py-3 border border-[rgba(212,175,55,0.2)] overflow-visible',
+          'max-w-[80%] min-w-0 rounded-2xl px-4 py-3 border-2 overflow-visible',
           isUser
-            ? 'bg-[#d4af37] text-[#0f172a] font-medium rounded-tr-none ml-auto'
-            : 'bg-[#1e293b] text-white rounded-tl-none'
+            ? 'bg-gold text-navy font-medium rounded-tr-none ml-auto border-gold/40'
+            : 'bg-graphite text-ivory rounded-tl-none border-gold/20'
         )}
       >
         <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
       </div>
       {isUser && (
-        <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full bg-[#1e293b]" />
+        <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full bg-graphite" />
       )}
     </div>
   );
