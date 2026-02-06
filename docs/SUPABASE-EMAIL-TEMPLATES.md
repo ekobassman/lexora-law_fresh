@@ -115,3 +115,11 @@ Per login immediato senza conferma:
 **Authentication** → **Providers** → **Email** → disattiva **"Confirm email"**
 
 Meno sicuro, ma l’utente entra subito.
+
+---
+
+## Fix: Link email punta a localhost
+
+1. **Vercel** → Environment Variables → aggiungi: `VITE_APP_URL=https://lexora-law-fresh.vercel.app`
+2. **Supabase** → Authentication → URL Configuration: Site URL e Redirect URLs = `https://lexora-law-fresh.vercel.app`
+3. **Redeploy** su Vercel.
