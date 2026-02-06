@@ -91,8 +91,8 @@ export function Home() {
       </section>
 
       {/* CHAT DEMO SECTION */}
-      <section id="chat-demo" className="bg-[#1e293b] py-10 md:py-16 px-4 scroll-mt-20 min-h-[85vh] flex flex-col justify-center">
-        <div className="max-w-3xl mx-auto w-full">
+      <section id="chat-demo" className="bg-[#1e293b] py-10 md:py-16 px-3 sm:px-4 scroll-mt-20 min-h-[85vh] flex flex-col justify-center overflow-x-hidden pb-[max(2.5rem,env(safe-area-inset-bottom))]">
+        <div className="max-w-3xl mx-auto w-full min-w-0">
           <ChatDemo />
         </div>
       </section>

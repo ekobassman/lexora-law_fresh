@@ -465,8 +465,8 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="bg-[#0f172a] rounded-2xl border-2 border-[#d4af37] p-4 sm:p-6 max-w-2xl mx-auto shadow-[0_0_40px_rgba(212,175,55,0.15)]">
+    <div className="flex flex-col gap-6 w-full min-w-0">
+      <div className="bg-[#0f172a] rounded-2xl border-2 border-[#d4af37] p-3 sm:p-6 w-full max-w-2xl mx-auto shadow-[0_0_40px_rgba(212,175,55,0.15)] box-border overflow-hidden">
         <input
           type="file"
           ref={fileInputRef}
@@ -485,18 +485,18 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
 
         {/* Area messaggi */}
         <div 
-          className="bg-[#f5f5dc] rounded-lg min-h-[260px] max-h-[55vh] sm:max-h-[65vh] mb-4 overflow-y-auto overflow-x-hidden p-4 space-y-4 border border-[#d4af37]/30 overscroll-contain"
+          className="bg-[#f5f5dc] rounded-lg min-h-[260px] max-h-[55vh] sm:max-h-[65vh] mb-4 overflow-y-auto overflow-x-hidden p-3 sm:p-4 space-y-4 border border-[#d4af37]/30 overscroll-contain min-w-0"
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {messages.map((msg, idx) => (
-            <div key={idx} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div key={idx} className={`flex min-w-0 ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.type === 'ai' && (
                 <div className="w-8 h-8 rounded-full bg-[#d4af37] flex items-center justify-center mr-2 flex-shrink-0">
                   <Scale className="w-5 h-5 text-[#0f172a]" />
                 </div>
               )}
               <div
-                className={`max-w-[90%] min-w-0 p-3 rounded-2xl text-base whitespace-pre-wrap break-words overflow-visible ${
+                className={`max-w-[85%] sm:max-w-[90%] min-w-0 p-3 rounded-2xl text-sm sm:text-base whitespace-pre-wrap break-words overflow-hidden ${
                   msg.type === 'user'
                     ? 'bg-[#d4af37] text-[#0f172a] rounded-tr-none font-medium'
                     : 'bg-[#e8e4d5] text-[#1e293b] rounded-tl-none border border-[#d4af37]/20'
@@ -577,12 +577,12 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
         </div>
 
         {/* Griglia pulsanti */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 min-w-0">
           <button
             type="button"
             onClick={() => cameraInputRef.current?.click()}
             disabled={isProcessingOCR}
-            className={`bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:border-[#d4af37] hover:bg-[#1e293b]/80 transition ${isProcessingOCR ? 'opacity-50 cursor-wait' : ''}`}
+            className={`bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] py-3 px-2 sm:px-4 rounded-lg flex items-center justify-center gap-1 sm:gap-2 hover:border-[#d4af37] hover:bg-[#1e293b]/80 transition min-w-0 text-sm sm:text-base ${isProcessingOCR ? 'opacity-50 cursor-wait' : ''}`}
           >
             {isProcessingOCR ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -595,7 +595,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:border-[#d4af37] hover:bg-[#1e293b]/80 transition"
+            className="bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] py-3 px-2 sm:px-4 rounded-lg flex items-center justify-center gap-1 sm:gap-2 hover:border-[#d4af37] hover:bg-[#1e293b]/80 transition min-w-0 text-sm sm:text-base"
           >
             <Paperclip className="w-5 h-5" />
             Upload file
@@ -605,7 +605,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
             type="button"
             onClick={handleCopy}
             disabled={!hasDocument || !draftText}
-            className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
+            className={`py-3 px-2 sm:px-4 rounded-lg flex items-center justify-center gap-1 sm:gap-2 transition min-w-0 text-sm sm:text-base ${
               hasDocument && draftText
                 ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
                 : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50'
@@ -619,13 +619,13 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
             type="button"
             onClick={handlePreview}
             disabled={!hasDocument}
-            className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
+            className={`py-3 px-2 sm:px-4 rounded-lg flex items-center justify-center gap-1 sm:gap-2 transition min-w-0 text-sm sm:text-base ${
               hasDocument
                 ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
                 : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50'
             }`}
           >
-            <Eye className="w-5 h-5" />
+            <Eye className="w-5 h-5 flex-shrink-0" />
             Preview
           </button>
 
@@ -633,31 +633,31 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
             type="button"
             onClick={handlePrint}
             disabled={!hasDocument}
-            className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
+            className={`py-3 px-2 sm:px-4 rounded-lg flex items-center justify-center gap-1 sm:gap-2 transition min-w-0 text-sm sm:text-base ${
               hasDocument
                 ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
                 : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50'
             }`}
           >
-            <Printer className="w-5 h-5" />
+            <Printer className="w-5 h-5 flex-shrink-0" />
             Print
           </button>
 
           {hasDocument ? (
             <a
               href={`mailto:?body=${encodeURIComponent(draftText ?? '')}`}
-              className="py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]"
+              className="py-3 px-2 sm:px-4 rounded-lg flex items-center justify-center gap-1 sm:gap-2 transition min-w-0 text-sm sm:text-base bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]"
             >
-              <Mail className="w-5 h-5" />
+              <Mail className="w-5 h-5 flex-shrink-0" />
               Email
             </a>
           ) : (
             <button
               type="button"
               disabled
-              className="py-3 px-4 rounded-lg flex items-center justify-center gap-2 bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50"
+              className="py-3 px-2 sm:px-4 rounded-lg flex items-center justify-center gap-1 sm:gap-2 min-w-0 text-sm sm:text-base bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50"
             >
-              <Mail className="w-5 h-5" />
+              <Mail className="w-5 h-5 flex-shrink-0" />
               Email
             </button>
           )}
