@@ -8,23 +8,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-demo-mode',
 };
 
-const EXTRACT_PROMPT = `Sei un OCR specializzato per documenti ufficiali tedeschi (Finanzamt, Amt, Behörden).
-Estrai SOLO il testo rilevante. Ignora macchie, sfocature e artefatti.
+const EXTRACT_PROMPT = `OCR per documenti ufficiali tedeschi. USA MODELLO gpt-4o. Estrai TUTTO il testo con precisione.
+IGNORA: macchie, sfocature, artefatti.
 
-REGOLE:
-- Documento ufficiale tedesco: mantieni formattazione righe, nomi, indirizzi, importi
-- Correzioni comuni OCR: "pinanzamt"→"Finanzamt", "£"→"€" o "E", "KI"→"1" se contesto numerico
-- Mantieni ordine logico: intestazione, mittente, destinatario, data, oggetto, corpo
+CORREZIONI OBBLIGATORIE (applica sempre):
+- "pinanzamt" / "Pinanzamt" → "Finanzamt"
+- "£" → "€"
+- "Herm" / "Herr" (in contesto indirizzo) → "Herrn"
+- "Raden-" + spazi/virgole → "Baden-Württemberg"
+- "KI" in contesto numerico → "1"
+- "Vu" + "ttemb" + "erg" → "Württemberg"
 
-Estrai in formato JSON (chiavi esatte):
-- sender: mittente (nome/ente)
-- recipient: destinatario
-- date: data (YYYY-MM-DD se presente)
-- subject: oggetto
-- documentType: tipo (Lettera, Bescheid, Steuerbescheid, etc.)
-- fullText: testo completo estratto, formattato per righe
+Mantieni: formattazione, nomi, indirizzi, importi, date.
 
-Ritorna SOLO un JSON valido, senza markdown.`;
+Ritorna JSON (chiavi esatte): sender, recipient, date, subject, documentType, fullText.
+fullText = testo completo leggibile. SOLO JSON valido, niente markdown.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -81,7 +79,7 @@ serve(async (req) => {
         messages: [
           { role: 'user', content: [
             { type: 'text', text: EXTRACT_PROMPT },
-            { type: 'image_url', image_url: { url: imageUrl } },
+            { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } },
           ]},
         ],
       }),

@@ -59,20 +59,14 @@ export function ChatDemo() {
 
   const lastMessageFromUser = useRef(false);
   useEffect(() => {
-    const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    const scrollChatIntoView = () => {
-      document.getElementById('chat-demo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
     if (lastMessageFromUser.current) {
-      setTimeout(scrollToBottom, 100);
+      setTimeout(scrollToBottom, 50);
       lastMessageFromUser.current = false;
     } else if (messages.length > 0) {
       const last = messages[messages.length - 1];
       if (last?.type === 'ai' && (last.ocrContent || last.documentReady)) {
-        setTimeout(() => {
-          scrollChatIntoView();
-          setTimeout(scrollToBottom, 400);
-        }, 150);
+        setTimeout(scrollToBottom, 100);
       }
     }
   }, [messages]);
@@ -465,8 +459,8 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full min-w-0">
-      <div className="bg-[#0f172a] rounded-2xl border-2 border-[#d4af37] p-3 sm:p-6 w-full max-w-2xl mx-auto shadow-[0_0_40px_rgba(212,175,55,0.15)] box-border overflow-hidden">
+    <div className="flex flex-col gap-6 w-full min-w-0 max-w-full">
+      <div className="bg-[#0f172a] rounded-2xl border-2 border-[#d4af37] p-3 sm:p-6 w-full max-w-2xl mx-auto shadow-[0_0_40px_rgba(212,175,55,0.15)] box-border overflow-hidden touch-pan-y">
         <input
           type="file"
           ref={fileInputRef}
@@ -560,7 +554,8 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSend(); } }}
             placeholder="Write here..."
-            className="flex-1 bg-transparent border-none outline-none px-4 text-[#1e293b] placeholder-[#999] text-base min-w-0"
+            className="flex-1 bg-transparent border-none outline-none px-4 text-[#1e293b] placeholder-[#999] min-w-0"
+            style={{ fontSize: '16px' }}
           />
           <button
             type="button"
