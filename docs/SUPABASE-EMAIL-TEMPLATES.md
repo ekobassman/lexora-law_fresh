@@ -121,5 +121,5 @@ Meno sicuro, ma l’utente entra subito.
 ## Fix: Link email punta a localhost
 
 1. **Vercel** → Environment Variables → aggiungi: `VITE_APP_URL=https://lexora-law-fresh.vercel.app`
-2. **Supabase** → Authentication → URL Configuration: Site URL e Redirect URLs = `https://lexora-law-fresh.vercel.app`
+2. **Supabase** → Authentication → URL Configuration: Site URL e Redirect URLs includano `https://lexora-law-fresh.vercel.app/auth/callback` e `https://lexora-law-fresh.vercel.app/auth/reset-password`
 3. **Redeploy** su Vercel.

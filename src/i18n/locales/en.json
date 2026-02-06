@@ -229,7 +229,19 @@
     "password": "Password",
     "name": "Name",
     "error_load_failed": "Connection failed. Please check your internet connection and that Supabase config (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) is set correctly on Vercel.",
-    "confirm_email_message": "Registration successful. Please check your email and confirm your account."
+    "confirm_email_message": "Registration successful. Please check your email and confirm your account.",
+    "privateAccess": "Access to your legal assistant",
+    "forgotPassword": "Forgot password?",
+    "resetEmailSent": "If an account exists, you will receive a reset link.",
+    "resetTitle": "Reset password",
+    "resetDesc": "Enter your email to receive a reset link.",
+    "sendReset": "Send link",
+    "backToLogin": "Back to login",
+    "loading": "Please wait...",
+    "setNewPassword": "Set new password",
+    "updatePassword": "Update password",
+    "resetSuccess": "Password updated successfully.",
+    "redirecting": "Redirecting to dashboard..."
   },
   "common": {
     "close": "Close",

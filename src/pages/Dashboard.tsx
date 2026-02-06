@@ -61,10 +61,8 @@ export function Dashboard() {
                 Seleziona una pratica dalla sidebar o carica un documento per iniziare.
               </p>
 
-              {/* Chat card - luxury style */}
-              <div className="rounded-2xl border-2 border-gold/30 bg-white shadow-premium overflow-hidden hover:border-gold/50 transition-all hover:shadow-[0_0_20px_rgba(201,162,77,0.15)]">
-                <ChatDashboard caseId={undefined} />
-              </div>
+              {/* Chat card - luxury style (matches homepage demo) */}
+              <ChatDashboard caseId={undefined} />
             </div>
           </div>
         </div>

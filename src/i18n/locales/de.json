@@ -229,7 +229,19 @@
     "password": "Passwort",
     "name": "Name",
     "error_load_failed": "Verbindung fehlgeschlagen. Bitte prüfen Sie die Internetverbindung und ob die Supabase-Konfiguration (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) auf Vercel korrekt ist.",
-    "confirm_email_message": "Registrierung erfolgreich. Bitte prüfen Sie Ihre E-Mail und bestätigen Sie Ihren Account."
+    "confirm_email_message": "Registrierung erfolgreich. Bitte prüfen Sie Ihre E-Mail und bestätigen Sie Ihren Account.",
+    "privateAccess": "Zugang zu Ihrem Rechtsassistenten",
+    "forgotPassword": "Passwort vergessen?",
+    "resetEmailSent": "Falls ein Konto existiert, erhalten Sie einen Link zum Zurücksetzen.",
+    "resetTitle": "Passwort zurücksetzen",
+    "resetDesc": "Geben Sie Ihre E-Mail ein. Sie erhalten einen Link zum Zurücksetzen.",
+    "sendReset": "Link senden",
+    "backToLogin": "Zurück zum Login",
+    "loading": "Bitte warten...",
+    "setNewPassword": "Neues Passwort festlegen",
+    "updatePassword": "Passwort aktualisieren",
+    "resetSuccess": "Passwort erfolgreich aktualisiert.",
+    "redirecting": "Weiterleitung zum Dashboard..."
   },
   "common": {
     "close": "Schließen",
