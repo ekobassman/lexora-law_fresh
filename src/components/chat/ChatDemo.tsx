@@ -38,6 +38,8 @@ export function ChatDemo() {
     text: string;
     image?: string;
     documentReady?: string;
+    ocrContent?: string;
+    ocrSummary?: string;
     ocrData?: { documentType: string; sender: string; recipient: string; date: string; subject: string };
     ocrDraft?: string;
   }>>([
@@ -57,9 +59,15 @@ export function ChatDemo() {
 
   const lastMessageFromUser = useRef(false);
   useEffect(() => {
+    const scroll = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     if (lastMessageFromUser.current) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(scroll, 100);
       lastMessageFromUser.current = false;
+    } else if (messages.length > 0) {
+      const last = messages[messages.length - 1];
+      if (last?.type === 'ai' && (last.ocrContent || last.documentReady)) {
+        setTimeout(scroll, 150);
+      }
     }
   }, [messages]);
 
@@ -392,25 +400,14 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
       setChatStep('collecting');
       setCollectingField('sender');
 
-      const displayText = analysis.fullText?.substring(0, 500) ?? draft_text.substring(0, 500);
+      const fullText = analysis.fullText ?? draft_text ?? '';
       setMessages((prev) => [
         ...prev,
         {
           type: 'ai',
-          text: `Documento analizzato${usedApi ? ' (GPT-4o Vision)' : ''}!
-
-CONTENUTO DELLA LETTERA:
-─────────────────────────
-${displayText}${(analysis.fullText?.length ?? 0) > 500 ? '...' : ''}
-─────────────────────────
-
-DATI ESTRATTI:
-• Mittente: ${analysis.sender || 'Non rilevato'}
-• Destinatario: ${analysis.recipient || 'Non rilevato'}
-• Data: ${analysis.date}
-• Oggetto: ${analysis.subject || 'Non rilevato'}
-
-Puoi usare Copy, Preview o Print subito. Vuoi preparare una risposta? Scrivi SI per usare questi dati, oppure NO per inserirli manualmente.`,
+          text: '',
+          ocrContent: fullText,
+          ocrSummary: `Documento analizzato${usedApi ? ' (GPT-4o Vision)' : ''}!\n\nDATI ESTRATTI:\n• Mittente: ${analysis.sender || 'Non rilevato'}\n• Destinatario: ${analysis.recipient || 'Non rilevato'}\n• Data: ${analysis.date}\n• Oggetto: ${analysis.subject || 'Non rilevato'}\n\nPuoi usare Copy, Preview o Print subito. Vuoi preparare una risposta? Scrivi SI per usare questi dati, oppure NO per inserirli manualmente.`,
         },
       ]);
     } catch (err) {
@@ -481,7 +478,7 @@ Puoi usare Copy, Preview o Print subito. Vuoi preparare una risposta? Scrivi SI 
         />
 
         {/* Area messaggi */}
-        <div className="bg-[#f5f5dc] rounded-lg min-h-[200px] max-h-[400px] mb-4 overflow-y-auto overflow-x-hidden p-4 space-y-4 border border-[#d4af37]/30">
+        <div className="bg-[#f5f5dc] rounded-lg min-h-[220px] max-h-[70vh] mb-4 overflow-y-auto overflow-x-hidden p-4 space-y-4 border border-[#d4af37]/30">
           {messages.map((msg, idx) => (
             <div key={idx} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.type === 'ai' && (
@@ -505,7 +502,13 @@ Puoi usare Copy, Preview o Print subito. Vuoi preparare una risposta? Scrivi SI 
                   />
                 )}
                 {msg.documentReady ? (
-                  <pre className="whitespace-pre-wrap break-words text-sm bg-[#f5f5dc] p-3 rounded border border-[#d4af37]/30 max-h-[280px] overflow-y-auto overflow-x-hidden">{msg.documentReady}</pre>
+                  <pre className="whitespace-pre-wrap break-words text-sm bg-[#f5f5dc] p-3 rounded border border-[#d4af37]/30 max-h-[320px] overflow-y-auto overflow-x-hidden">{msg.documentReady}</pre>
+                ) : msg.ocrContent ? (
+                  <div className="space-y-3">
+                    <div className="text-xs font-medium text-[#1e293b]/80">CONTENUTO DELLA LETTERA:</div>
+                    <pre className="whitespace-pre-wrap break-words text-sm bg-[#f5f5dc] p-3 rounded border border-[#d4af37]/30 max-h-[280px] overflow-y-auto overflow-x-hidden">{msg.ocrContent}</pre>
+                    <pre className="whitespace-pre-wrap break-words text-xs border-t border-[#d4af37]/20 pt-2 mt-2">{msg.ocrSummary}</pre>
+                  </div>
                 ) : (
                   msg.text
                 )}
