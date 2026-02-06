@@ -9,21 +9,27 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 };
 
-const EXTRACT_PROMPT = `OCR per documenti ufficiali tedeschi. USA MODELLO gpt-4o. Estrai TUTTO il testo con precisione.
-IGNORA: macchie, sfocature, artefatti.
+const EXTRACT_PROMPT = `Tu sei un OCR di precisione per documenti ufficiali (lettere, avvisi, decreti). Estrai TUTTO il testo presente nell'immagine.
 
-CORREZIONI OBBLIGATORIE (applica sempre):
-- "pinanzamt" / "Pinanzamt" → "Finanzamt"
-- "£" → "€"
-- "Herm" / "Herr" (in contesto indirizzo) → "Herrn"
-- "Raden-" + spazi/virgole → "Baden-Württemberg"
-- "KI" in contesto numerico → "1"
-- "Vu" + "ttemb" + "erg" → "Württemberg"
+REGOLE CRITICHE - ANALISI COMPLETA:
+1. Leggi OGNI parola, OGNI riga, OGNI carattere. NON troncare, NON omettere, NON riassumere.
+2. fullText DEVE contenere l'intero contenuto del documento, dall'inizio alla fine, senza eccezioni.
+3. Supporta tedesco, italiano, inglese, francese, spagnolo e altre lingue europee.
+4. Mantieni la formattazione originale (paragrafi, interruzioni di riga dove presenti).
+5. Per caratteri poco chiari: usa il contesto per correggere (es. "Finanzamt" non "pinanzamt", "Herrn" non "Herr").
+6. Numeri, date, importi: trascrivi esattamente come appaiono (€, non £).
+7. Umlaut: ä, ö, ü, ß - trascrivi correttamente.
+8. Nomi propri e indirizzi: trascrivi con la massima accuratezza.
 
-Mantieni: formattazione, nomi, indirizzi, importi, date.
+Estrai e ritorna un JSON con queste chiavi ESATTE:
+- sender: mittente/emittente (autorità, azienda o persona che invia)
+- recipient: destinatario (a chi è indirizzata la lettera)
+- date: data del documento (formato YYYY-MM-DD se possibile)
+- subject: oggetto/betreff/cause
+- documentType: tipo (Lettera, Avviso, Decreto, etc.)
+- fullText: TUTTO il testo del documento, dall'intestazione alla firma, COMPLETO, SENZA omissioni.
 
-Ritorna JSON (chiavi esatte): sender, recipient, date, subject, documentType, fullText.
-fullText = testo completo leggibile. SOLO JSON valido, niente markdown.`;
+Rispondi SOLO con JSON valido, nessun markdown, nessun testo prima o dopo.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -76,7 +82,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o',
         temperature: 0.0,
-        max_tokens: 2048,
+        max_tokens: 8192,
         messages: [
           { role: 'user', content: [
             { type: 'text', text: EXTRACT_PROMPT },
