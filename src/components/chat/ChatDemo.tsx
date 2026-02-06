@@ -211,50 +211,32 @@ Cordiali saluti,
   };
 
   const handleCamera = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMessages((prev) => [...prev, { type: 'ai', text: '📸 DEBUG 0: Click rilevato!' }]);
-
     const file = e.target.files?.[0];
+    if (!file) return;
 
-    if (!file) {
-      setMessages((prev) => [...prev, { type: 'ai', text: '❌ DEBUG 1: Nessun file selezionato' }]);
-      return;
-    }
-
+    setIsProcessingOCR(true);
     setMessages((prev) => [
       ...prev,
       { type: 'user', text: '📸 Documento scannerizzato' },
-      { type: 'ai', text: `✅ DEBUG 1: File trovato - ${file.name} (${(file.size / 1024).toFixed(1)}KB)` },
+      { type: 'ai', text: '⏳ Analisi documento... 0%' },
     ]);
 
-    setIsProcessingOCR(true);
-
-    if (typeof Tesseract === 'undefined') {
-      setMessages((prev) => [...prev, { type: 'ai', text: '❌ DEBUG 2: Tesseract non importato!' }]);
-      setIsProcessingOCR(false);
-      e.target.value = '';
-      return;
-    }
-
-    setMessages((prev) => [...prev, { type: 'ai', text: '✅ DEBUG 2: Tesseract trovato' }]);
-
     try {
-      setMessages((prev) => [...prev, { type: 'ai', text: '⏳ DEBUG 3: Avvio Tesseract.recognize...' }]);
-
-      const result = await Tesseract.recognize(file, 'ita', {
+      const result = await Tesseract.recognize(file, 'ita+eng', {
         logger: (m: { status?: string; progress?: number }) => {
-          console.log('Tesseract:', m);
           if (m.status === 'recognizing text') {
             const percent = Math.round((m.progress ?? 0) * 100);
-            if (percent % 20 === 0) {
+            if (percent % 25 === 0) {
               setMessages((prev) => {
                 const newMessages = [...prev];
-                if (newMessages[newMessages.length - 1]?.text?.includes('%')) {
+                const lastMsg = newMessages[newMessages.length - 1];
+                if (lastMsg?.type === 'ai' && lastMsg.text.includes('Analisi')) {
                   newMessages[newMessages.length - 1] = {
                     type: 'ai',
-                    text: `⏳ Riconoscimento... ${percent}%`,
+                    text: `⏳ Analisi documento... ${percent}%`,
                   };
                 } else {
-                  newMessages.push({ type: 'ai', text: `⏳ Riconoscimento... ${percent}%` });
+                  newMessages.push({ type: 'ai', text: `⏳ Analisi documento... ${percent}%` });
                 }
                 return newMessages;
               });
@@ -263,43 +245,60 @@ Cordiali saluti,
         },
       });
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          type: 'ai',
-          text: `✅ DEBUG 4: Risultato ricevuto! Lunghezza: ${result?.data?.text?.length ?? 0} caratteri`,
-        },
-      ]);
+      const extractedText = result?.data?.text ?? '';
+      const lines = extractedText.split('\n').filter((l) => l.trim());
 
-      const extractedText = result?.data?.text ?? 'Nessun testo trovato';
+      const sender =
+        lines.find((l) => /da:|mittente:|from:/i.test(l))?.replace(/da:|mittente:|from:/i, '').trim() ??
+        lines[0]?.substring(0, 30) ??
+        'Non rilevato';
 
-      setMessages((prev) => [
-        ...prev,
-        { type: 'ai', text: `📝 Testo estratto:\n${extractedText.substring(0, 100)}...` },
-      ]);
+      const recipient =
+        lines.find((l) => /a:|destinatario:|to:/i.test(l))?.replace(/a:|destinatario:|to:/i, '').trim() ??
+        'Non rilevato';
 
-      setOcrResult({
+      const dateMatch = extractedText.match(/\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}/);
+      const date = dateMatch ? dateMatch[0] : new Date().toISOString().split('T')[0];
+
+      const subject =
+        lines.find((l) => /oggetto:|subject:|re:/i.test(l))?.replace(/oggetto:|subject:|re:/i, '').trim() ??
+        lines[0]?.substring(0, 50) ??
+        'Non rilevato';
+
+      const analysis: Record<string, string> = {
         documentType: 'Lettera',
-        sender: 'Da analisi',
-        recipient: 'Da analisi',
-        date: new Date().toISOString().split('T')[0],
-        subject: 'Documento scannerizzato',
+        sender,
+        recipient,
+        date,
+        subject,
         fullText: extractedText,
-      });
+      };
+
+      setOcrResult(analysis);
       setDocumentData({
         type: 'response_letter',
         sender: '',
-        recipient: '',
-        date: new Date().toISOString().split('T')[0],
-        subject: 'Risposta a documento',
+        recipient: sender !== 'Non rilevato' ? sender : '',
+        date,
+        subject: `Risposta a: ${subject !== 'Non rilevato' ? subject : 'documento'}`,
         content: '',
       });
       setChatStep('collecting');
       setCollectingField('sender');
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: 'ai',
+          text: `✅ Documento analizzato!\n\n📄 Tipo: ${analysis.documentType}\n✍️ Da: ${sender}\n📧 A: ${recipient}\n📅 Data: ${date}\n📝 Oggetto: ${subject}\n\nVuoi che prepari una risposta? Indicami i dati mancanti: come ti chiami? (mittente)`,
+        },
+      ]);
     } catch (err) {
-      console.error('Errore catch:', err);
-      const msg = err instanceof Error ? err.message : JSON.stringify(err);
-      setMessages((prev) => [...prev, { type: 'ai', text: `❌ DEBUG ERRORE: ${msg}` }]);
+      console.error('OCR error:', err);
+      setMessages((prev) => [
+        ...prev,
+        { type: 'ai', text: '❌ Errore nella lettura. Prova con una foto più nitida.' },
+      ]);
     } finally {
       setIsProcessingOCR(false);
     }
