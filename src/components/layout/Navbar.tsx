@@ -25,7 +25,10 @@ export function Navbar() {
   }, []);
 
   return (
-    <nav className="bg-[#0f172a] border-b border-[rgba(212,175,55,0.3)] h-20 fixed w-full z-50 top-0">
+    <nav
+      className="fixed top-0 left-0 right-0 z-50 h-20 bg-[#0f172a] border-b border-[rgba(212,175,55,0.3)]"
+      style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+    >
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         <Logo size="sm" />
 
