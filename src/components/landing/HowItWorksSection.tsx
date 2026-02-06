@@ -70,7 +70,7 @@ export function HowItWorksSection({ id }: HowItWorksSectionProps) {
         </div>
 
         <div className="text-center mt-12 pt-8 border-t border-[#d4af37]/20">
-          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-transparent border border-[#9ca3af]">
+          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-transparent border border-[#d4af37]/50">
             <span className="text-[#d4af37] font-semibold">{getSafeText(t, 'landingSections.howItWorks.timeIndicator', '⏱️ Average time: 5-10 minutes')}</span>
           </div>
         </div>

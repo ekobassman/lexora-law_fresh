@@ -101,7 +101,7 @@ export function TrustSecuritySection({ id }: TrustSecuritySectionProps) {
             {countries.map((country) => (
               <div
                 key={country.code}
-                className="flex items-center justify-center gap-3 p-4 min-h-[80px] rounded-lg bg-[#1e293b] border border-[#374151] hover:border-[#d4af37]/40 transition-all overflow-hidden min-w-0"
+                className="flex items-center justify-center gap-3 p-4 min-h-[80px] rounded-lg bg-[#1e293b] border border-[#d4af37]/40 hover:border-[#d4af37] transition-all overflow-hidden min-w-0"
               >
                 <span className="text-2xl md:text-3xl shrink-0">{country.flag}</span>
                 <span className="font-medium text-white text-center text-sm md:text-base line-clamp-2 break-words leading-tight min-w-0 flex-1">

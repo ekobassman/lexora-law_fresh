@@ -60,7 +60,7 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="w-10 h-10 rounded-full border border-gray-muted/50 flex items-center justify-center text-white hover:bg-navy-medium transition bg-[#1e293b]"
+              className="w-10 h-10 rounded-full border border-[#d4af37] flex items-center justify-center text-white hover:bg-navy-medium transition bg-[#1e293b]"
               aria-label="Menu utente"
             >
               <User className="w-5 h-5" />

@@ -79,7 +79,7 @@ export function PricingSection({ id }: PricingSectionProps) {
               <Card
                 key={plan.key}
                 className={`relative flex flex-col overflow-hidden min-h-0 rounded-2xl ${
-                  plan.popular ? 'border-2 border-[#d4af37] shadow-lg scale-105' : 'border border-[#e5e7eb]'
+                  plan.popular ? 'border-2 border-[#d4af37] shadow-lg scale-105' : 'border border-[#d4af37]/40'
                 }`}
               >
                 {plan.popular && (

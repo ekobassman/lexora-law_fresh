@@ -40,7 +40,7 @@ export function FAQSection({ id }: FAQSectionProps) {
           {faqs.map((faq, index) => (
             <div
               key={index}
-              className="border border-[#e5e7eb] rounded-xl px-6 bg-white shadow-sm overflow-hidden"
+              className="border border-[#d4af37]/40 rounded-xl px-6 bg-white shadow-sm overflow-hidden"
             >
               <button
                 type="button"

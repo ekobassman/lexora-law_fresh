@@ -63,7 +63,7 @@ export function SupportedDocumentsSection({ id }: SupportedDocumentsSectionProps
             return (
               <div
                 key={index}
-                className="group flex flex-col h-full min-h-[140px] overflow-hidden p-6 rounded-2xl border border-[#e5e7eb] bg-white shadow-sm hover:border-[#d4af37]/30 hover:shadow-md transition-all"
+                className="group flex flex-col h-full min-h-[140px] overflow-hidden p-6 rounded-2xl border border-[#d4af37]/40 bg-white shadow-sm hover:border-[#d4af37] hover:shadow-md transition-all"
               >
                 <div className={`w-12 h-12 shrink-0 rounded-xl ${doc.bgColor} flex items-center justify-center mb-3`}>
                   <Icon className={`w-6 h-6 md:w-7 md:h-7 shrink-0 ${doc.color}`} />
@@ -79,11 +79,11 @@ export function SupportedDocumentsSection({ id }: SupportedDocumentsSectionProps
           })}
         </div>
 
-        <div className="text-center mt-12 pt-8 border-t border-[#e5e7eb]">
+        <div className="text-center mt-12 pt-8 border-t border-[#d4af37]/30">
           <p className="text-sm text-[#4b5563] mb-3">{getSafeText(t, 'landingSections.documents.formatsTitle', 'Supported file formats:')}</p>
           <div className="flex flex-wrap justify-center gap-2">
             {['PDF', 'JPG', 'PNG', 'WEBP', 'HEIC'].map((format) => (
-              <span key={format} className="inline-flex items-center px-3 py-1 rounded-full border border-[#9ca3af] text-[#4b5563] text-sm">
+              <span key={format} className="inline-flex items-center px-3 py-1 rounded-full border border-[#d4af37]/50 text-[#4b5563] text-sm">
                 {format}
               </span>
             ))}

@@ -102,7 +102,7 @@ export function Footer() {
                 href="https://linkedin.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-10 w-10 rounded-full border border-[#9ca3af] flex items-center justify-center text-[#9ca3af] hover:text-white hover:border-[#d4af37] transition-all"
+                className="h-10 w-10 rounded-full border border-[#d4af37] flex items-center justify-center text-[#d4af37] hover:text-white hover:bg-[#d4af37]/20 transition-all"
               >
                 <Linkedin className="h-4 w-4" />
               </a>
@@ -110,7 +110,7 @@ export function Footer() {
                 href="https://twitter.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-10 w-10 rounded-full border border-[#9ca3af] flex items-center justify-center text-[#9ca3af] hover:text-white hover:border-[#d4af37] transition-all"
+                className="h-10 w-10 rounded-full border border-[#d4af37] flex items-center justify-center text-[#d4af37] hover:text-white hover:bg-[#d4af37]/20 transition-all"
               >
                 <Twitter className="h-4 w-4" />
               </a>
