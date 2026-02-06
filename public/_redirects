@@ -1,1 +1,5 @@
-/sitemap.xml https://yefntmyviadcbnmrlvcl.supabase.co/functions/v1/sitemap 301
+# Sitemap proxy al NUOVO database
+/sitemap.xml https://ttzykwwaruxcstftanae.supabase.co/storage/v1/object/public/sitemap/sitemap.xml 200
+
+# SPA fallback
+/* /index.html 200
