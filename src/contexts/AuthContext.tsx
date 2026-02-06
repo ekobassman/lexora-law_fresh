@@ -61,8 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: { full_name: name },
       },
     });
-    const needsConfirmation = !error && data?.user && !data?.session;
-    return { error: error as Error | null, needsConfirmation };
+    return {
+      error: error as Error | null,
+      ...(!error && data?.user && !data?.session && { needsConfirmation: true }),
+    };
   };
 
   const signOut = async () => {
