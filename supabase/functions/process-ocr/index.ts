@@ -8,15 +8,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-demo-mode',
 };
 
-const EXTRACT_PROMPT = `Analizza questo documento e estrai i seguenti dati in formato JSON (usa esattamente queste chiavi):
-- sender: mittente (nome/ente che ha scritto)
-- recipient: destinatario
-- date: data del documento (formato YYYY-MM-DD se presente, altrimenti stringa)
-- subject: oggetto/soggetto
-- documentType: tipo (es. Lettera, Raccomandata, Avviso, Contratto, ecc.)
-- fullText: testo completo estratto (se leggibile)
+const EXTRACT_PROMPT = `Sei un OCR specializzato per documenti ufficiali tedeschi (Finanzamt, Amt, Behörden).
+Estrai SOLO il testo rilevante. Ignora macchie, sfocature e artefatti.
 
-Ritorna SOLO un JSON valido, senza markdown o testo aggiuntivo.`;
+REGOLE:
+- Documento ufficiale tedesco: mantieni formattazione righe, nomi, indirizzi, importi
+- Correzioni comuni OCR: "pinanzamt"→"Finanzamt", "£"→"€" o "E", "KI"→"1" se contesto numerico
+- Mantieni ordine logico: intestazione, mittente, destinatario, data, oggetto, corpo
+
+Estrai in formato JSON (chiavi esatte):
+- sender: mittente (nome/ente)
+- recipient: destinatario
+- date: data (YYYY-MM-DD se presente)
+- subject: oggetto
+- documentType: tipo (Lettera, Bescheid, Steuerbescheid, etc.)
+- fullText: testo completo estratto, formattato per righe
+
+Ritorna SOLO un JSON valido, senza markdown.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -67,8 +75,8 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        max_tokens: 1024,
+        model: 'gpt-4o',
+        max_tokens: 2048,
         messages: [
           { role: 'user', content: [
             { type: 'text', text: EXTRACT_PROMPT },

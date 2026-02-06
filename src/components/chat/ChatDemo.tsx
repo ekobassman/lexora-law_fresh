@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
 import Tesseract from 'tesseract.js';
 import {
   Scale,
@@ -283,6 +284,48 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
     e.target.value = '';
   };
 
+  const runTesseractFallback = async (file: File): Promise<{ analysis: Record<string, string>; extractedText: string }> => {
+    const result = await Tesseract.recognize(file, 'deu+ita+eng', {
+      logger: (m: { status?: string; progress?: number }) => {
+        if (m.status === 'recognizing text') {
+          const percent = Math.round((m.progress ?? 0) * 100);
+          if (percent % 25 === 0) {
+            setMessages((prev) => {
+              const newMessages = [...prev];
+              const lastMsg = newMessages[newMessages.length - 1];
+              if (lastMsg?.type === 'ai' && lastMsg.text.includes('Analisi')) {
+                newMessages[newMessages.length - 1] = {
+                  type: 'ai',
+                  text: `⏳ Analisi documento (fallback)... ${percent}%`,
+                };
+              }
+              return newMessages;
+            });
+          }
+        }
+      },
+    });
+    const extractedText = result?.data?.text ?? '';
+    const lines = extractedText.split('\n').filter((l) => l.trim());
+    const sender =
+      lines.find((l) => /da:|mittente:|from:|absender/i.test(l))?.replace(/da:|mittente:|from:|absender/i, '').trim() ??
+      lines[0]?.substring(0, 30) ??
+      'Non rilevato';
+    const recipient =
+      lines.find((l) => /a:|destinatario:|to:|empfänger|an:/i.test(l))?.replace(/a:|destinatario:|to:|empfänger|an:/i, '').trim() ??
+      'Non rilevato';
+    const dateMatch = extractedText.match(/\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}/);
+    const date = dateMatch ? dateMatch[0] : new Date().toISOString().split('T')[0];
+    const subject =
+      lines.find((l) => /oggetto:|subject:|re:|betreff/i.test(l))?.replace(/oggetto:|subject:|re:|betreff/i, '').trim() ??
+      lines[0]?.substring(0, 50) ??
+      'Non rilevato';
+    return {
+      analysis: { documentType: 'Lettera', sender, recipient, date, subject, fullText: extractedText },
+      extractedText,
+    };
+  };
+
   const handleCamera = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -291,99 +334,90 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
     setMessages((prev) => [
       ...prev,
       { type: 'user', text: '📸 Documento scannerizzato' },
-      { type: 'ai', text: '⏳ Analisi documento... 0%' },
+      { type: 'ai', text: '⏳ Analisi documento con AI...' },
     ]);
 
     try {
-      const result = await Tesseract.recognize(file, 'ita+eng', {
-        logger: (m: { status?: string; progress?: number }) => {
-          if (m.status === 'recognizing text') {
-            const percent = Math.round((m.progress ?? 0) * 100);
-            if (percent % 25 === 0) {
-              setMessages((prev) => {
-                const newMessages = [...prev];
-                const lastMsg = newMessages[newMessages.length - 1];
-                if (lastMsg?.type === 'ai' && lastMsg.text.includes('Analisi')) {
-                  newMessages[newMessages.length - 1] = {
-                    type: 'ai',
-                    text: `⏳ Analisi documento... ${percent}%`,
-                  };
-                } else {
-                  newMessages.push({ type: 'ai', text: `⏳ Analisi documento... ${percent}%` });
-                }
-                return newMessages;
-              });
-            }
-          }
-        },
+      const mimeType = file.type || 'image/jpeg';
+      const reader = new FileReader();
+      const imageBase64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64 = result?.includes(',') ? result.split(',')[1] : result;
+          resolve(base64 ?? '');
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
 
-      const extractedText = result?.data?.text ?? '';
-      const lines = extractedText.split('\n').filter((l) => l.trim());
+      let analysis: Record<string, string>;
+      let draft_text: string;
+      let usedApi = false;
 
-      const sender =
-        lines.find((l) => /da:|mittente:|from:/i.test(l))?.replace(/da:|mittente:|from:/i, '').trim() ??
-        lines[0]?.substring(0, 30) ??
-        'Non rilevato';
+      try {
+        const { data, error } = await supabase.functions.invoke('process-ocr', {
+          body: { imageBase64, mimeType },
+        });
+        if (!error && data?.ok && data?.draft_text) {
+          analysis = {
+            documentType: data.documentType ?? data.analysis?.documentType ?? 'Lettera',
+            sender: data.sender ?? data.analysis?.sender ?? 'Non rilevato',
+            recipient: data.recipient ?? data.analysis?.recipient ?? 'Non rilevato',
+            date: data.date ?? data.analysis?.date ?? new Date().toISOString().split('T')[0],
+            subject: data.subject ?? data.analysis?.subject ?? 'Non rilevato',
+            fullText: data.analysis?.fullText ?? data.draft_text ?? '',
+          };
+          draft_text = data.draft_text;
+          usedApi = true;
+        } else {
+          throw new Error(data?.error ?? 'API non disponibile');
+        }
+      } catch {
+        const { analysis: tessAnalysis, extractedText } = await runTesseractFallback(file);
+        analysis = tessAnalysis;
+        draft_text = `[Bozza estratta da documento]\n\nMittente: ${tessAnalysis.sender}\nDestinatario: ${tessAnalysis.recipient}\nData: ${tessAnalysis.date}\nOggetto: ${tessAnalysis.subject}\n\n${extractedText || 'Testo da completare.'}`;
+      }
 
-      const recipient =
-        lines.find((l) => /a:|destinatario:|to:/i.test(l))?.replace(/a:|destinatario:|to:/i, '').trim() ??
-        'Non rilevato';
-
-      const dateMatch = extractedText.match(/\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}/);
-      const date = dateMatch ? dateMatch[0] : new Date().toISOString().split('T')[0];
-
-      const subject =
-        lines.find((l) => /oggetto:|subject:|re:/i.test(l))?.replace(/oggetto:|subject:|re:/i, '').trim() ??
-        lines[0]?.substring(0, 50) ??
-        'Non rilevato';
-
-      const analysis: Record<string, string> = {
-        documentType: 'Lettera',
-        sender,
-        recipient,
-        date,
-        subject,
-        fullText: extractedText,
-      };
-
+      saveToPreview(draft_text);
+      setHasDocument(true);
       setOcrResult(analysis);
       setDocumentData({
         type: 'response_letter',
         sender: '',
-        recipient: sender !== 'Non rilevato' ? sender : '',
-        date,
-        subject: `Risposta a: ${subject !== 'Non rilevato' ? subject : 'documento'}`,
+        recipient: analysis.sender !== 'Non rilevato' ? analysis.sender : analysis.recipient,
+        date: analysis.date,
+        subject: `Risposta a: ${analysis.subject !== 'Non rilevato' ? analysis.subject : 'documento'}`,
         content: '',
       });
       setChatStep('collecting');
       setCollectingField('sender');
 
+      const displayText = analysis.fullText?.substring(0, 500) ?? draft_text.substring(0, 500);
       setMessages((prev) => [
         ...prev,
         {
           type: 'ai',
-          text: `Documento analizzato!
+          text: `Documento analizzato${usedApi ? ' (GPT-4o Vision)' : ''}!
 
 CONTENUTO DELLA LETTERA:
 ─────────────────────────
-${extractedText.substring(0, 400)}${extractedText.length > 400 ? '... (testo troncato)' : ''}
+${displayText}${(analysis.fullText?.length ?? 0) > 500 ? '...' : ''}
 ─────────────────────────
 
 DATI ESTRATTI:
-• Mittente: ${sender || 'Non rilevato'}
-• Destinatario: ${recipient || 'Non rilevato'}
-• Data: ${date}
-• Oggetto: ${subject || 'Non rilevato'}
+• Mittente: ${analysis.sender || 'Non rilevato'}
+• Destinatario: ${analysis.recipient || 'Non rilevato'}
+• Data: ${analysis.date}
+• Oggetto: ${analysis.subject || 'Non rilevato'}
 
-Vuoi che prepari una risposta? Scrivi SI per usare questi dati, oppure NO per inserirli manualmente.`,
+Puoi usare Copy, Preview o Print subito. Vuoi preparare una risposta? Scrivi SI per usare questi dati, oppure NO per inserirli manualmente.`,
         },
       ]);
     } catch (err) {
       console.error('OCR error:', err);
       setMessages((prev) => [
         ...prev,
-        { type: 'ai', text: '❌ Errore nella lettura. Prova con una foto più nitida.' },
+        { type: 'ai', text: '❌ Impossibile leggere il documento. Prova con una foto più nitida e ben illuminata.' },
       ]);
     } finally {
       setIsProcessingOCR(false);
@@ -447,7 +481,7 @@ Vuoi che prepari una risposta? Scrivi SI per usare questi dati, oppure NO per in
         />
 
         {/* Area messaggi */}
-        <div className="bg-[#f5f5dc] rounded-lg h-80 mb-4 overflow-y-auto p-4 space-y-4 border border-[#d4af37]/30">
+        <div className="bg-[#f5f5dc] rounded-lg min-h-[200px] max-h-[400px] mb-4 overflow-y-auto overflow-x-hidden p-4 space-y-4 border border-[#d4af37]/30">
           {messages.map((msg, idx) => (
             <div key={idx} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.type === 'ai' && (
@@ -456,7 +490,7 @@ Vuoi che prepari una risposta? Scrivi SI per usare questi dati, oppure NO per in
                 </div>
               )}
               <div
-                className={`max-w-[90%] p-3 rounded-2xl text-base whitespace-pre-wrap ${
+                className={`max-w-[90%] min-w-0 p-3 rounded-2xl text-base whitespace-pre-wrap break-words overflow-visible ${
                   msg.type === 'user'
                     ? 'bg-[#d4af37] text-[#0f172a] rounded-tr-none font-medium'
                     : 'bg-[#e8e4d5] text-[#1e293b] rounded-tl-none border border-[#d4af37]/20'
@@ -471,7 +505,7 @@ Vuoi che prepari una risposta? Scrivi SI per usare questi dati, oppure NO per in
                   />
                 )}
                 {msg.documentReady ? (
-                  <pre className="whitespace-pre-wrap text-sm bg-[#f5f5dc] p-3 rounded border border-[#d4af37]/30 max-h-64 overflow-y-auto">{msg.documentReady}</pre>
+                  <pre className="whitespace-pre-wrap break-words text-sm bg-[#f5f5dc] p-3 rounded border border-[#d4af37]/30 max-h-[280px] overflow-y-auto overflow-x-hidden">{msg.documentReady}</pre>
                 ) : (
                   msg.text
                 )}
@@ -558,9 +592,9 @@ Vuoi che prepari una risposta? Scrivi SI per usare questi dati, oppure NO per in
           <button
             type="button"
             onClick={handleCopy}
-            disabled={chatStep !== 'generated'}
+            disabled={!hasDocument || !draftText}
             className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
-              chatStep === 'generated'
+              hasDocument && draftText
                 ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
                 : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50'
             }`}
@@ -572,9 +606,9 @@ Vuoi che prepari una risposta? Scrivi SI per usare questi dati, oppure NO per in
           <button
             type="button"
             onClick={handlePreview}
-            disabled={chatStep !== 'generated'}
+            disabled={!hasDocument}
             className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
-              chatStep === 'generated'
+              hasDocument
                 ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
                 : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50'
             }`}
@@ -586,9 +620,9 @@ Vuoi che prepari una risposta? Scrivi SI per usare questi dati, oppure NO per in
           <button
             type="button"
             onClick={handlePrint}
-            disabled={chatStep !== 'generated'}
+            disabled={!hasDocument}
             className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
-              chatStep === 'generated'
+              hasDocument
                 ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
                 : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50'
             }`}
@@ -597,7 +631,7 @@ Vuoi che prepari una risposta? Scrivi SI per usare questi dati, oppure NO per in
             Print
           </button>
 
-          {chatStep === 'generated' ? (
+          {hasDocument ? (
             <a
               href={`mailto:?body=${encodeURIComponent(draftText ?? '')}`}
               className="py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]"

@@ -21,13 +21,13 @@ export function ChatMessage({ message }: ChatMessageProps) {
       </div>
       <div
         className={cn(
-          'max-w-[80%] rounded-2xl px-4 py-3 border border-[rgba(212,175,55,0.2)]',
+          'max-w-[80%] min-w-0 rounded-2xl px-4 py-3 border border-[rgba(212,175,55,0.2)] overflow-visible',
           isUser
             ? 'bg-[#d4af37] text-[#0f172a] font-medium rounded-tr-none ml-auto'
             : 'bg-[#1e293b] text-white rounded-tl-none'
         )}
       >
-        <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+        <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
       </div>
       {isUser && (
         <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full bg-[#1e293b]" />
