@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
 import {
   Scale,
   Mic,
@@ -12,6 +13,7 @@ import {
   Printer,
   Mail,
   Trash2,
+  Loader2,
 } from 'lucide-react';
 
 const DEMO_PREVIEW_KEY = 'lexora_demo_preview';
@@ -34,7 +36,7 @@ Cordiali saluti,
 
 export function ChatDemo() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Array<{ type: 'ai' | 'user'; text: string }>>([
+  const [messages, setMessages] = useState<Array<{ type: 'ai' | 'user'; text: string; image?: string }>>([
     {
       type: 'ai',
       text: 'Benvenuto! Sono Lexora, il tuo assistente legale AI. Descrivimi la tua situazione (es. assenza scolastica, lettera al datore di lavoro) e ti aiuterò a redigere un documento formale.',
@@ -43,6 +45,7 @@ export function ChatDemo() {
   const [inputText, setInputText] = useState('');
   const [draftText, setDraftText] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessingOCR, setIsProcessingOCR] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -101,17 +104,67 @@ export function ChatDemo() {
     e.target.value = '';
   };
 
-  const handleCamera = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCamera = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setMessages((prev) => [...prev, { type: 'user', text: '📸 Documento scannerizzato' }]);
-      setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          { type: 'ai', text: 'Sto elaborando l\'immagine. Ecco la bozza estratta:' },
-        ]);
-        saveToPreview(SAMPLE_LETTER);
-      }, 800);
+    if (!file) return;
+
+    const imageUrl = URL.createObjectURL(file);
+    setMessages((prev) => [
+      ...prev,
+      { type: 'user', text: '📸 Scannerizzazione documento in corso...', image: imageUrl },
+    ]);
+    setIsProcessingOCR(true);
+
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const fileName = `ocr-temp-${Date.now()}.${ext}`;
+      const filePath = `temp/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('uploads')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: ocrData, error: ocrError } = await supabase.functions.invoke('process-ocr', {
+        body: { filePath: uploadData.path, bucket: 'uploads' },
+        headers: user ? {} : { 'X-Demo-Mode': 'true' },
+      });
+
+      if (ocrError) throw ocrError;
+
+      const analysis = ocrData?.analysis ?? ocrData;
+      const draft = ocrData?.draft_text ?? ocrData?.draftText ?? SAMPLE_LETTER;
+      const docType = analysis?.documentType ?? ocrData?.documentType ?? 'Lettera';
+      const sender = analysis?.sender ?? ocrData?.sender ?? 'Non rilevato';
+      const date = analysis?.date ?? ocrData?.date ?? 'Non rilevata';
+      const subject = analysis?.subject ?? ocrData?.subject ?? 'Non rilevato';
+
+      saveToPreview(draft);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: 'ai',
+          text: `✅ Ho analizzato il documento!\n\n**Dati estratti:**\n• Tipo: ${docType}\n• Mittente: ${sender}\n• Data: ${date}\n• Oggetto: ${subject}\n\nCosa vuoi fare con queste informazioni?`,
+        },
+      ]);
+    } catch (err) {
+      console.error('OCR Error:', err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: 'ai',
+          text: '❌ Non sono riuscito a leggere il documento. Prova a scattare una foto più nitida o carica un PDF. (Se non sei registrato, la scansione OCR completa richiede un account.)',
+        },
+      ]);
+      setMessages((prev) => [
+        ...prev,
+        { type: 'ai', text: 'Ecco una bozza di esempio basata su un documento tipico:' },
+      ]);
+      saveToPreview(SAMPLE_LETTER);
+    } finally {
+      setIsProcessingOCR(false);
     }
     e.target.value = '';
   };
@@ -182,6 +235,14 @@ export function ChatDemo() {
                     : 'bg-[#e8e4d5] text-[#1e293b] rounded-tl-none border border-[#d4af37]/20'
                 }`}
               >
+                {msg.image && (
+                  <img
+                    src={msg.image}
+                    alt="Documento"
+                    className="max-w-full h-auto rounded-lg mb-2 max-h-32 object-cover"
+                    onLoad={() => URL.revokeObjectURL(msg.image!)}
+                  />
+                )}
                 {msg.text}
               </div>
             </div>
@@ -239,10 +300,15 @@ export function ChatDemo() {
           <button
             type="button"
             onClick={() => cameraInputRef.current?.click()}
-            className="bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:border-[#d4af37] hover:bg-[#1e293b]/80 transition"
+            disabled={isProcessingOCR}
+            className={`bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:border-[#d4af37] hover:bg-[#1e293b]/80 transition ${isProcessingOCR ? 'opacity-50 cursor-wait' : ''}`}
           >
-            <Camera className="w-5 h-5" />
-            Scan document
+            {isProcessingOCR ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Camera className="w-5 h-5" />
+            )}
+            {isProcessingOCR ? 'Analisi...' : 'Scan document'}
           </button>
 
           <button

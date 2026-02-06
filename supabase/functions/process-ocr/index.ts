@@ -16,18 +16,31 @@ serve(async (req) => {
 
   try {
     const demoMode = req.headers.get('x-demo-mode') === 'true';
+    const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
+    const { filePath, bucket } = body;
 
-    // TODO: gestione multipart/form-data per upload file
-    // TODO: integrazione OCR (Tesseract o servizio esterno)
-    // TODO: analisi e bozza con OpenAI
+    // TODO: integrazione OCR (Tesseract o servizio esterno), analisi con OpenAI
+    // Per ora ritorna struttura compatibile con il frontend
+    const analysis = {
+      documentType: 'Lettera',
+      sender: 'Da rilevare',
+      date: new Date().toISOString().slice(0, 10),
+      subject: 'Da rilevare',
+      ocr_text: '',
+    };
+    const draft_text = `[Bozza estratta da OCR]\n\nMittente: ${analysis.sender}\nData: ${analysis.date}\nOggetto: ${analysis.subject}\n\nTesto estratto: in elaborazione.`;
 
     return new Response(
       JSON.stringify({
         ok: true,
         document_id: 'placeholder',
-        file_path: 'placeholder',
-        analysis: {},
-        draft_text: '[Bozza da OCR] Da implementare.',
+        file_path: filePath ?? 'placeholder',
+        analysis,
+        draft_text,
+        documentType: analysis.documentType,
+        sender: analysis.sender,
+        date: analysis.date,
+        subject: analysis.subject,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
