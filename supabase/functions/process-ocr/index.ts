@@ -6,6 +6,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-demo-mode',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 };
 
 const EXTRACT_PROMPT = `OCR per documenti ufficiali tedeschi. USA MODELLO gpt-4o. Estrai TUTTO il testo con precisione.
