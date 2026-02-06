@@ -36,6 +36,15 @@ Cordiali saluti,
 
 export function ChatDemo() {
   const { user } = useAuth();
+  const [chatStep, setChatStep] = useState<'welcome' | 'collecting' | 'confirming' | 'generated'>('welcome');
+  const [documentData, setDocumentData] = useState({
+    type: '',
+    sender: '',
+    recipient: '',
+    date: '',
+    subject: '',
+    content: '',
+  });
   const [messages, setMessages] = useState<Array<{
     type: 'ai' | 'user';
     text: string;
@@ -45,7 +54,7 @@ export function ChatDemo() {
   }>>([
     {
       type: 'ai',
-      text: 'Benvenuto! Sono Lexora, il tuo assistente legale AI. Descrivimi la tua situazione (es. assenza scolastica, lettera al datore di lavoro) e ti aiuterò a redigere un documento formale.',
+      text: 'Ciao! Sono Lexora, il tuo assistente legale AI.\n\nPosso aiutarti a creare:\n• Lettere formali al datore di lavoro\n• Lettere al proprietario di casa\n• Lettere alle autorità scolastiche\n• Reclami e richieste ufficiali\n\nChe tipo di documento ti serve? Descrivimi la tua situazione.',
     },
   ]);
   const [inputText, setInputText] = useState('');
@@ -56,7 +65,7 @@ export function ChatDemo() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const hasDocument = !!draftText;
+  const hasDocument = chatStep === 'generated' && !!draftText;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -74,37 +83,115 @@ export function ChatDemo() {
     }
   };
 
-  const handleSend = async () => {
-    if (!inputText.trim()) return;
+  const buildDraftFromData = (data: typeof documentData) => {
+    const today = new Date().toISOString().slice(0, 10);
+    return `${data.sender || '[Mittente]'}
+[Indirizzo]
+${data.date || today}
 
-    setMessages((prev) => [...prev, { type: 'user', text: inputText }]);
+${data.recipient || '[Destinatario]'}
+[Indirizzo]
+
+Oggetto: ${data.subject || '[Oggetto]'}
+
+Egregi Signori,
+
+La presente per comunicarVi quanto richiesto.
+
+Cordiali saluti,
+[Firma]`;
+  };
+
+  const handleSend = async () => {
+    const text = inputText.trim();
+    if (!text) return;
+
+    setMessages((prev) => [...prev, { type: 'user', text }]);
     setInputText('');
     setIsLoading(true);
 
+    const lower = text.toLowerCase();
+    const isConfirm = ['conferma', 'confermo', 'sì', 'si', 'ok', 'perfetto', 'va bene'].some((w) => lower.includes(w));
+
     setTimeout(() => {
-      const reply =
-        inputText.toLowerCase().includes('conferma') || inputText.toLowerCase().includes('sì') || inputText.toLowerCase().includes('ok')
-          ? `Ecco la bozza del documento:\n\n${SAMPLE_LETTER}\n\nRegistrati per salvarla nel Dashboard.`
-          : 'Ho capito la tua richiesta. Per procedere con la redazione del documento, ho bisogno di alcune informazioni specifiche. Potresti indicarmi: 1) Il tuo nome completo, 2) Il destinatario, 3) La data di riferimento? Per generare la bozza rispondi con "Conferma" o "Ok".';
-
-      const hasDraft = reply.includes('Ecco la bozza');
-      if (hasDraft) saveToPreview(SAMPLE_LETTER);
-
-      setMessages((prev) => [...prev, { type: 'ai', text: reply }]);
+      if (chatStep === 'welcome') {
+        setDocumentData((d) => ({ ...d, type: text }));
+        setChatStep('collecting');
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: 'ai',
+            text: 'Perfetto! Ho bisogno di: 1) Il tuo nome (mittente), 2) Il destinatario, 3) La data (opzionale), 4) Il motivo/oggetto. Puoi indicarmeli in un messaggio?',
+          },
+        ]);
+      } else if (chatStep === 'collecting') {
+        const parts = text.split(/[,;]/).map((p) => p.trim()).filter(Boolean);
+        const sender = (parts[0] ?? documentData.sender) || 'da indicare';
+        const recipient = (parts[1] ?? documentData.recipient) || 'da indicare';
+        const date = (parts[2] ?? documentData.date) || 'da indicare';
+        const subject = (parts[3] ?? (parts.length > 2 ? parts.slice(2).join(', ') : documentData.subject)) || 'da indicare';
+        setDocumentData((d) => ({
+          ...d,
+          sender: parts[0] ?? d.sender,
+          recipient: parts[1] ?? d.recipient,
+          date: parts[2] ?? d.date,
+          subject: parts[3] ?? d.subject,
+          content: text,
+        }));
+        setChatStep('confirming');
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: 'ai',
+            text: `Riepilogo:\n• Tipo: ${documentData.type || 'Lettera'}\n• Mittente: ${sender}\n• Destinatario: ${recipient}\n• Data: ${date}\n• Oggetto: ${subject}\n\nConfermi? Rispondi "Conferma" o "Ok" per generare il documento.`,
+          },
+        ]);
+      } else if (chatStep === 'confirming' && isConfirm) {
+        const data = documentData;
+        const draft = buildDraftFromData(data);
+        saveToPreview(draft);
+        setChatStep('generated');
+        setMessages((prev) => [
+          ...prev,
+          { type: 'ai', text: `Ecco la bozza del documento:\n\n${draft}\n\nRegistrati per salvarla nel Dashboard.` },
+        ]);
+      } else if (chatStep === 'confirming' && !isConfirm) {
+        setMessages((prev) => [
+          ...prev,
+          { type: 'ai', text: 'Per generare il documento rispondi "Conferma" o "Ok".' },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          { type: 'ai', text: 'Il documento è pronto. Usa Copy, Preview o Print. Per iniziare da capo clicca Clear.' },
+        ]);
+      }
       setIsLoading(false);
-    }, 1000);
+    }, 800);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setMessages((prev) => [...prev, { type: 'user', text: `📎 Ho caricato: ${file.name}` }]);
+      setDocumentData((d) => ({ ...d, type: 'Documento caricato' }));
+      setChatStep('confirming');
       setTimeout(() => {
         setMessages((prev) => [
           ...prev,
-          { type: 'ai', text: 'Ho ricevuto il documento. Ecco la bozza estratta:' },
+          {
+            type: 'ai',
+            text: 'Ho ricevuto il documento. Descrivi brevemente di cosa si tratta (mittente, destinatario, oggetto) oppure clicca "Genera risposta" per una bozza generica.',
+            ocrData: {
+              documentType: 'Lettera',
+              sender: 'Da indicare',
+              recipient: 'Da indicare',
+              date: new Date().toISOString().slice(0, 10),
+              subject: 'Da indicare',
+            },
+            ocrDraft: SAMPLE_LETTER,
+          },
         ]);
-        saveToPreview(SAMPLE_LETTER);
       }, 800);
     }
     e.target.value = '';
@@ -179,7 +266,8 @@ export function ChatDemo() {
       const date = analysis?.date ?? ocrData?.date ?? 'Non rilevata';
       const subject = analysis?.subject ?? ocrData?.subject ?? 'Non rilevato';
 
-      saveToPreview(draft);
+      setDocumentData({ type: docType, sender, recipient, date, subject, content: draft });
+      setChatStep('confirming');
 
       setMessages((prev) => [
         ...prev,
@@ -199,7 +287,6 @@ export function ChatDemo() {
           text: '❌ Non sono riuscito a leggere il documento. Prova a scattare una foto più nitida.',
         },
       ]);
-      saveToPreview(SAMPLE_LETTER);
     } finally {
       setIsProcessingOCR(false);
     }
@@ -207,10 +294,12 @@ export function ChatDemo() {
   };
 
   const handleClear = () => {
+    setChatStep('welcome');
+    setDocumentData({ type: '', sender: '', recipient: '', date: '', subject: '', content: '' });
     setMessages([
       {
         type: 'ai',
-        text: 'Benvenuto! Sono Lexora, il tuo assistente legale AI. Descrivimi la tua situazione (es. assenza scolastica, lettera al datore di lavoro) e ti aiuterò a redigere un documento formale.',
+        text: 'Ciao! Sono Lexora, il tuo assistente legale AI.\n\nPosso aiutarti a creare:\n• Lettere formali al datore di lavoro\n• Lettere al proprietario di casa\n• Lettere alle autorità scolastiche\n• Reclami e richieste ufficiali\n\nChe tipo di documento ti serve? Descrivimi la tua situazione.',
       },
     ]);
     setDraftText(null);
@@ -292,8 +381,9 @@ export function ChatDemo() {
                       <button
                         type="button"
                         onClick={() => {
-                          const draft = msg.ocrDraft ?? draftText ?? SAMPLE_LETTER;
+                          const draft = msg.ocrDraft ?? buildDraftFromData(documentData) ?? SAMPLE_LETTER;
                           saveToPreview(draft);
+                          setChatStep('generated');
                           setMessages((prev) => [...prev, { type: 'ai', text: `Ecco la bozza del documento:\n\n${draft}\n\nRegistrati per salvarla nel Dashboard.` }]);
                         }}
                         className="px-3 py-1.5 rounded-lg bg-[#d4af37] text-[#0f172a] font-medium hover:bg-[#f4d03f] transition text-sm"
