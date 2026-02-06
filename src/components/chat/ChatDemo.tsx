@@ -36,7 +36,13 @@ Cordiali saluti,
 
 export function ChatDemo() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Array<{ type: 'ai' | 'user'; text: string; image?: string }>>([
+  const [messages, setMessages] = useState<Array<{
+    type: 'ai' | 'user';
+    text: string;
+    image?: string;
+    ocrData?: { documentType: string; sender: string; recipient: string; date: string; subject: string };
+    ocrDraft?: string;
+  }>>([
     {
       type: 'ai',
       text: 'Benvenuto! Sono Lexora, il tuo assistente legale AI. Descrivimi la tua situazione (es. assenza scolastica, lettera al datore di lavoro) e ti aiuterò a redigere un documento formale.',
@@ -104,30 +110,62 @@ export function ChatDemo() {
     e.target.value = '';
   };
 
+  const compressImage = (file: File, maxSizeKB = 800): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (file.size <= maxSizeKB * 1024) {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+        return;
+      }
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const canvas = document.createElement('canvas');
+        const maxW = 1200;
+        const scale = img.width > maxW ? maxW / img.width : 1;
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas error'));
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Image load failed'));
+      };
+      img.src = objectUrl;
+    });
+  };
+
   const handleCamera = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      setMessages((prev) => [
+        ...prev,
+        { type: 'ai', text: '❌ Formato non supportato. Usa JPG o PNG.' },
+      ]);
+      e.target.value = '';
+      return;
+    }
 
     const imageUrl = URL.createObjectURL(file);
     setMessages((prev) => [
       ...prev,
-      { type: 'user', text: '📸 Scannerizzazione documento in corso...', image: imageUrl },
+      { type: 'user', text: '📸 Analisi documento in corso...', image: imageUrl },
     ]);
     setIsProcessingOCR(true);
 
     try {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const fileName = `ocr-temp-${Date.now()}.${ext}`;
-      const filePath = `temp/${fileName}`;
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('uploads')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
+      const imageBase64 = await compressImage(file);
 
       const { data: ocrData, error: ocrError } = await supabase.functions.invoke('process-ocr', {
-        body: { filePath: uploadData.path, bucket: 'uploads' },
+        body: { imageBase64, mimeType: file.type.startsWith('image/') ? file.type : 'image/jpeg' },
         headers: user ? {} : { 'X-Demo-Mode': 'true' },
       });
 
@@ -137,6 +175,7 @@ export function ChatDemo() {
       const draft = ocrData?.draft_text ?? ocrData?.draftText ?? SAMPLE_LETTER;
       const docType = analysis?.documentType ?? ocrData?.documentType ?? 'Lettera';
       const sender = analysis?.sender ?? ocrData?.sender ?? 'Non rilevato';
+      const recipient = analysis?.recipient ?? ocrData?.recipient ?? 'Non rilevato';
       const date = analysis?.date ?? ocrData?.date ?? 'Non rilevata';
       const subject = analysis?.subject ?? ocrData?.subject ?? 'Non rilevato';
 
@@ -146,7 +185,9 @@ export function ChatDemo() {
         ...prev,
         {
           type: 'ai',
-          text: `✅ Ho analizzato il documento!\n\n**Dati estratti:**\n• Tipo: ${docType}\n• Mittente: ${sender}\n• Data: ${date}\n• Oggetto: ${subject}\n\nCosa vuoi fare con queste informazioni?`,
+          text: '✅ Ho analizzato il documento! Ecco cosa ho trovato:',
+          ocrData: { documentType: docType, sender, recipient, date, subject },
+          ocrDraft: draft,
         },
       ]);
     } catch (err) {
@@ -155,12 +196,8 @@ export function ChatDemo() {
         ...prev,
         {
           type: 'ai',
-          text: '❌ Non sono riuscito a leggere il documento. Prova a scattare una foto più nitida o carica un PDF. (Se non sei registrato, la scansione OCR completa richiede un account.)',
+          text: '❌ Non sono riuscito a leggere il documento. Prova a scattare una foto più nitida.',
         },
-      ]);
-      setMessages((prev) => [
-        ...prev,
-        { type: 'ai', text: 'Ecco una bozza di esempio basata su un documento tipico:' },
       ]);
       saveToPreview(SAMPLE_LETTER);
     } finally {
@@ -214,7 +251,7 @@ export function ChatDemo() {
           type="file"
           ref={cameraInputRef}
           className="hidden"
-          accept="image/*"
+          accept="image/jpeg,image/jpg,image/png"
           capture="environment"
           onChange={handleCamera}
         />
@@ -244,6 +281,35 @@ export function ChatDemo() {
                   />
                 )}
                 {msg.text}
+                {msg.ocrData && (
+                  <div className="mt-3 p-3 rounded-lg border-2 border-[#d4af37] bg-[#fef9e7] text-[#1e293b] space-y-1 text-sm">
+                    <div><span className="font-semibold text-[#b8941f]">Tipo:</span> {msg.ocrData.documentType}</div>
+                    <div><span className="font-semibold text-[#b8941f]">Mittente:</span> {msg.ocrData.sender}</div>
+                    <div><span className="font-semibold text-[#b8941f]">Destinatario:</span> {msg.ocrData.recipient}</div>
+                    <div><span className="font-semibold text-[#b8941f]">Data:</span> {msg.ocrData.date}</div>
+                    <div><span className="font-semibold text-[#b8941f]">Oggetto:</span> {msg.ocrData.subject}</div>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const draft = msg.ocrDraft ?? draftText ?? SAMPLE_LETTER;
+                          saveToPreview(draft);
+                          setMessages((prev) => [...prev, { type: 'ai', text: `Ecco la bozza del documento:\n\n${draft}\n\nRegistrati per salvarla nel Dashboard.` }]);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-[#d4af37] text-[#0f172a] font-medium hover:bg-[#f4d03f] transition text-sm"
+                      >
+                        Genera risposta
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setInputText(`Modifica: mittente ${msg.ocrData!.sender}, oggetto ${msg.ocrData!.subject}`)}
+                        className="px-3 py-1.5 rounded-lg border-2 border-[#d4af37] text-[#1e293b] font-medium hover:bg-[#d4af37]/20 transition text-sm"
+                      >
+                        Modifica
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}

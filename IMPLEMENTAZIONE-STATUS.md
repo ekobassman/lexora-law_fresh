@@ -69,9 +69,9 @@
 - [ ] Export PDF (libreria client-side o testo formattato)
 
 ### STEP 9: OCR
-- [ ] Integrazione process-ocr Edge Function
-- [ ] Chiamata upload → OCR dal frontend
-- [ ] Visualizzazione risultati estratti
+- [x] Integrazione process-ocr Edge Function con OpenAI Vision
+- [x] Flusso base64: Scan → compress → invoke process-ocr (no Storage necessario)
+- [x] Box dorato con dati estratti + pulsanti Genera risposta / Modifica
 
 ---
 
