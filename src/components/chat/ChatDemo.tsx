@@ -211,116 +211,130 @@ Cordiali saluti,
 
   const handleCamera = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!validTypes.includes(file.type)) {
-      setMessages((prev) => [...prev, { type: 'ai', text: '❌ Formato non supportato. Usa JPG o PNG.' }]);
-      e.target.value = '';
+    if (!file) {
+      setMessages((prev) => [...prev, { type: 'ai', text: '❌ Nessun file selezionato' }]);
       return;
     }
 
+    setMessages((prev) => [
+      ...prev,
+      { type: 'user', text: '📸 Documento scannerizzato' },
+      { type: 'ai', text: `📁 File: ${file.name} (${(file.size / 1024).toFixed(1)} KB)` },
+    ]);
+
     setIsProcessingOCR(true);
-    setMessages((prev) => [...prev, { type: 'user', text: '📸 Analisi documento in corso...' }]);
 
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
         const base64 = event.target?.result as string;
-        if (!base64 || !base64.startsWith('data:image')) {
-          setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore nel caricamento immagine' }]);
+
+        if (!base64) {
+          setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore: base64 vuoto' }]);
           setIsProcessingOCR(false);
           e.target.value = '';
           return;
         }
-
-        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-        if (!apiKey) {
-          setMessages((prev) => [...prev, { type: 'ai', text: '❌ VITE_OPENAI_API_KEY non configurata nel .env' }]);
-          setIsProcessingOCR(false);
-          e.target.value = '';
-          return;
-        }
-
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-              {
-                role: 'system',
-                content: 'Estrai da questo documento: documentType (tipo), sender (mittente), recipient (destinatario), date (data), subject (oggetto). Rispondi SOLO in JSON valido.',
-              },
-              {
-                role: 'user',
-                content: [{ type: 'image_url', image_url: { url: base64 } }],
-              },
-            ],
-            max_tokens: 1000,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.text();
-          console.error('OpenAI error:', errorData);
-          setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore analisi. Riprova.' }]);
-          setIsProcessingOCR(false);
-          e.target.value = '';
-          return;
-        }
-
-        const result = await response.json();
-        const content = result.choices?.[0]?.message?.content ?? '';
-
-        let analysis: Record<string, string>;
-        try {
-          const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || content.match(/{[\s\S]*?}/);
-          analysis = jsonMatch
-            ? JSON.parse(jsonMatch[1] || jsonMatch[0])
-            : {
-                documentType: 'Lettera',
-                sender: 'Non rilevato',
-                recipient: 'Non rilevato',
-                date: new Date().toISOString().split('T')[0],
-                subject: 'Non rilevato',
-              };
-        } catch {
-          analysis = {
-            documentType: 'Lettera',
-            sender: 'Non rilevato',
-            recipient: 'Non rilevato',
-            date: new Date().toISOString().split('T')[0],
-            subject: 'Non rilevato',
-            fullText: content,
-          };
-        }
-
-        setOcrResult(analysis);
-        setDocumentData({
-          type: 'response_letter',
-          sender: '',
-          recipient: analysis.recipient ?? analysis.sender ?? '',
-          date: analysis.date ?? new Date().toISOString().split('T')[0],
-          subject: `Risposta a: ${analysis.subject || 'Documento'}`,
-          content: '',
-        });
-        setChatStep('collecting');
-        setCollectingField('sender');
 
         setMessages((prev) => [
           ...prev,
-          {
-            type: 'ai',
-            text: `✅ Documento analizzato!\n\n📄 Tipo: ${analysis.documentType ?? 'Lettera'}\n✍️ Da: ${analysis.sender ?? 'Non rilevato'}\n📧 A: ${analysis.recipient ?? 'Non rilevato'}\n📅 Data: ${analysis.date ?? '—'}\n📝 Oggetto: ${analysis.subject ?? 'Non rilevato'}\n\nVuoi generare una risposta? Indicami i dati mancanti: come ti chiami? (mittente)`,
-          },
+          { type: 'ai', text: `🔄 Base64 generato (${base64.length} caratteri)` },
         ]);
+
+        if (!base64.startsWith('data:image')) {
+          setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore: formato non valido' }]);
+          setIsProcessingOCR(false);
+          e.target.value = '';
+          return;
+        }
+
+        setMessages((prev) => [...prev, { type: 'ai', text: '⏳ Chiamata OpenAI...' }]);
+
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        if (!apiKey) {
+          setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore: API Key mancante nel .env' }]);
+          setIsProcessingOCR(false);
+          e.target.value = '';
+          return;
+        }
+
+        try {
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'text',
+                      text: 'Cosa vedi in questa immagine? Descrivi il documento.',
+                    },
+                    { type: 'image_url', image_url: { url: base64 } },
+                  ],
+                },
+              ],
+              max_tokens: 500,
+            }),
+          });
+
+          setMessages((prev) => [
+            ...prev,
+            { type: 'ai', text: `📡 Status: ${response.status} ${response.statusText}` },
+          ]);
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            setMessages((prev) => [
+              ...prev,
+              {
+                type: 'ai',
+                text: `❌ Errore OpenAI: ${response.status}\n${errorText.substring(0, 200)}`,
+              },
+            ]);
+            setIsProcessingOCR(false);
+            e.target.value = '';
+            return;
+          }
+
+          const result = await response.json();
+          const content = result.choices?.[0]?.message?.content ?? 'Nessuna risposta';
+
+          setMessages((prev) => [
+            ...prev,
+            { type: 'ai', text: `✅ Risposta ricevuta:\n${content}` },
+          ]);
+
+          const analysis: Record<string, string> = {
+            documentType: 'Lettera',
+            sender: 'Vedi sopra',
+            recipient: 'Vedi sopra',
+            date: new Date().toISOString().split('T')[0],
+            subject: content.substring(0, 50),
+          };
+          setOcrResult(analysis);
+          setDocumentData({
+            type: 'response_letter',
+            sender: '',
+            recipient: analysis.recipient ?? '',
+            date: analysis.date ?? new Date().toISOString().split('T')[0],
+            subject: `Risposta a: ${analysis.subject || 'Documento'}`,
+            content: '',
+          });
+          setChatStep('collecting');
+          setCollectingField('sender');
+        } catch (fetchErr) {
+          const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+          setMessages((prev) => [...prev, { type: 'ai', text: `❌ Errore fetch: ${msg}` }]);
+        }
       } catch (err) {
-        console.error('OCR Error:', err);
-        setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore imprevisto. Riprova.' }]);
+        const msg = err instanceof Error ? err.message : String(err);
+        setMessages((prev) => [...prev, { type: 'ai', text: `❌ Errore: ${msg}` }]);
       } finally {
         setIsProcessingOCR(false);
         e.target.value = '';
@@ -328,7 +342,7 @@ Cordiali saluti,
     };
 
     reader.onerror = () => {
-      setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore nel caricamento del file.' }]);
+      setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore lettura file' }]);
       setIsProcessingOCR(false);
       e.target.value = '';
     };
