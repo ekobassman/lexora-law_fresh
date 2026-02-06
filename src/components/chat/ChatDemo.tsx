@@ -231,22 +231,84 @@ Cordiali saluti,
         reader.readAsDataURL(file);
       });
 
-      const { data, error } = await supabase.functions.invoke('process-ocr', {
-        body: { imageBase64: base64 },
-        headers: user ? {} : { 'X-Demo-Mode': 'true' },
-      });
+      if (!base64.startsWith('data:image')) {
+        console.warn('OCR: base64 deve iniziare con data:image/..., ricevuto:', base64?.slice(0, 50));
+      }
 
-      if (error) throw error;
+      let data: { ok?: boolean; analysis?: Record<string, string> } | null = null;
+      let error: unknown = null;
 
-      const analysis = data?.analysis ?? data;
-      if (data?.ok && analysis) {
+      try {
+        const result = await supabase.functions.invoke('process-ocr', {
+          body: { imageBase64: base64 },
+          headers: user ? {} : { 'X-Demo-Mode': 'true' },
+        });
+        data = result.data;
+        error = result.error;
+        console.log('OCR Response:', { data, error });
+      } catch (invokeErr) {
+        console.error('OCR invoke error:', invokeErr);
+        error = invokeErr;
+      }
+
+      if (error) {
+        const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+        if (apiKey && base64.startsWith('data:image')) {
+          console.log('OCR: fallback a OpenAI diretto (Edge Function non disponibile)');
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              max_tokens: 1024,
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'text',
+                      text: 'Analizza questo documento ed estrai: documentType, sender, recipient, date, subject. Rispondi solo in JSON con queste chiavi.',
+                    },
+                    { type: 'image_url', image_url: { url: base64 } },
+                  ],
+                },
+              ],
+            }),
+          });
+          const result = await response.json();
+          if (result.choices?.[0]?.message?.content) {
+            const content = result.choices[0].message.content.trim();
+            let analysis: Record<string, string> = {
+              documentType: 'Lettera',
+              sender: 'Non rilevato',
+              recipient: 'Non rilevato',
+              date: new Date().toISOString().slice(0, 10),
+              subject: 'Non rilevato',
+            };
+            try {
+              const cleaned = content.replace(/```json\n?|\n?```/g, '').trim();
+              const parsed = JSON.parse(cleaned);
+              if (typeof parsed === 'object') analysis = { ...analysis, ...parsed };
+            } catch {
+              analysis.fullText = content;
+            }
+            data = { ok: true, analysis };
+          }
+        }
+      }
+
+      const analysis = (data?.analysis ?? data) as Record<string, string> | undefined;
+      if (data?.ok && analysis && typeof analysis === 'object') {
         const docType = analysis.documentType ?? 'Lettera';
         const sender = analysis.sender ?? 'Non rilevato';
         const recipient = analysis.recipient ?? 'Non rilevato';
         const date = analysis.date ?? new Date().toISOString().split('T')[0];
         const subject = analysis.subject ?? 'Non rilevato';
 
-        setOcrResult(analysis);
+        setOcrResult(analysis as Record<string, string>);
         setDocumentData({
           type: 'response_letter',
           sender: '',
@@ -266,6 +328,7 @@ Cordiali saluti,
           },
         ]);
       } else {
+        console.error('OCR: risposta non valida', { data, error });
         setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore nella lettura del documento. Riprova con una foto più nitida.' }]);
       }
     } catch (err) {
