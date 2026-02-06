@@ -41,26 +41,31 @@ export function Navbar() {
           <span className="font-display text-2xl font-medium tracking-widest text-white uppercase">LEXORA</span>
         </Link>
 
-        <div className="hidden md:flex md:items-center md:gap-6">
-          {isLanding && !user && (
-            <>
-              <button onClick={() => scrollToSection('how-it-works')} className="text-ivory/70 hover:text-gold transition-colors text-sm font-medium">
-                {t('nav.howItWorks') || 'How it works'}
-              </button>
-              <button onClick={() => scrollToSection('pricing')} className="text-ivory/70 hover:text-gold transition-colors text-sm font-medium">
-                {t('footer.pricing')}
-              </button>
-              <button onClick={() => scrollToSection('faq')} className="text-ivory/70 hover:text-gold transition-colors text-sm font-medium">
-                {t('nav.faq') || 'FAQ'}
-              </button>
-            </>
-          )}
+        <div className="flex items-center gap-4">
+          {/* Nav links - desktop only */}
+          <div className="hidden md:flex md:items-center md:gap-6">
+            {isLanding && !user && (
+              <>
+                <button onClick={() => scrollToSection('how-it-works')} className="text-ivory/70 hover:text-gold transition-colors text-sm font-medium">
+                  {t('nav.howItWorks') || 'How it works'}
+                </button>
+                <button onClick={() => scrollToSection('pricing')} className="text-ivory/70 hover:text-gold transition-colors text-sm font-medium">
+                  {t('footer.pricing')}
+                </button>
+                <button onClick={() => scrollToSection('faq')} className="text-ivory/70 hover:text-gold transition-colors text-sm font-medium">
+                  {t('nav.faq') || 'FAQ'}
+                </button>
+              </>
+            )}
+          </div>
+          {/* Language Switcher - SEMPRE VISIBILE, fuori dal menu */}
           <LanguageSwitcher />
+          {/* Icona Utente */}
           <div className="relative" ref={userMenuRef}>
             <button
               type="button"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="w-10 h-10 rounded-full border border-[#d4af37] flex items-center justify-center text-white hover:bg-navy-medium transition bg-[#1e293b]"
+              className="p-2 rounded-full border border-[#d4af37] text-white hover:bg-[#d4af37]/10 transition-colors"
               aria-label="Menu utente"
             >
               <User className="w-5 h-5" />
@@ -125,18 +130,19 @@ export function Navbar() {
               </div>
             )}
           </div>
+          {/* Menu Hamburger - SOLO mobile */}
+          <button
+            type="button"
+            className="md:hidden p-2 text-white"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Menu"
+          >
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
-
-        <button
-          type="button"
-          className="md:hidden p-2 rounded-lg hover:bg-[#1e293b] transition text-[#d4af37]"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Menu"
-        >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
       </div>
 
+      {/* Mobile Menu - Solo links di navigazione, NON LanguageSwitcher */}
       {mobileOpen && (
         <div className="md:hidden bg-[#1e293b] border-t border-[#d4af37]/30 px-4 py-4 space-y-2">
           {isLanding && !user && (
@@ -152,7 +158,6 @@ export function Navbar() {
               </button>
             </>
           )}
-          <LanguageSwitcher />
           {user ? (
             <>
               <Link to="/dashboard" className="block py-3 text-white" onClick={() => setMobileOpen(false)}>
