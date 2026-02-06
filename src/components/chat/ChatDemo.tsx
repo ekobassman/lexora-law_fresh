@@ -18,36 +18,20 @@ import {
 
 const DEMO_PREVIEW_KEY = 'lexora_demo_preview';
 
-const SAMPLE_LETTER = `[Nome mittente]
-[Indirizzo]
-[Data]
-
-[Destinatario]
-[Indirizzo]
-
-Oggetto: Lettera generata da Lexora
-
-Egregi Signori,
-
-La presente per comunicarVi quanto richiesto.
-
-Cordiali saluti,
-[Firma]`;
-
 export function ChatDemo() {
   const { user } = useAuth();
-  const [chatStep, setChatStep] = useState<'welcome' | 'collecting' | 'confirming' | 'generated'>('welcome');
-  const [collectingField, setCollectingField] = useState<'sender' | 'recipient' | 'subject' | 'details' | null>(null);
+  const [chatStep, setChatStep] = useState<'welcome' | 'collecting' | 'confirming' | 'generating' | 'generated'>('welcome');
+  const [collectingField, setCollectingField] = useState<'sender' | 'recipient' | 'subject' | 'content' | null>(null);
+  const [hasDocument, setHasDocument] = useState(false);
   const [documentData, setDocumentData] = useState({
     type: '',
-    typeKey: '' as '' | 'employer_letter' | 'landlord_letter' | 'school_absence' | 'other',
     sender: '',
     recipient: '',
     date: '',
     subject: '',
     content: '',
   });
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [, setOcrResult] = useState<Record<string, string> | null>(null);
   const [messages, setMessages] = useState<Array<{
     type: 'ai' | 'user';
     text: string;
@@ -69,11 +53,10 @@ export function ChatDemo() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const hasDocument = chatStep === 'generated' && !!draftText;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading, isGenerating]);
+  }, [messages, isLoading, chatStep]);
 
   const saveToPreview = (text: string) => {
     setDraftText(text);
@@ -85,21 +68,6 @@ export function ChatDemo() {
     } catch {
       /* ignore */
     }
-  };
-
-  const detectDocumentType = (text: string): '' | 'employer_letter' | 'landlord_letter' | 'school_absence' | 'other' => {
-    const t = text.toLowerCase();
-    if (/\b(lavoro|datore|azienda|dipendente)\b/.test(t)) return 'employer_letter';
-    if (/\b(casa|affitto|proprietario|inquilino|locazione)\b/.test(t)) return 'landlord_letter';
-    if (/\b(scuola|assenza|scolastica|preside|docente)\b/.test(t)) return 'school_absence';
-    return 'other';
-  };
-
-  const getTypeLabel = (key: string) => {
-    if (key === 'employer_letter') return 'Lettera al datore di lavoro';
-    if (key === 'landlord_letter') return 'Lettera al proprietario di casa';
-    if (key === 'school_absence') return 'Lettera alle autorità scolastiche';
-    return 'Lettera formale';
   };
 
   const buildDraftFromData = (data: typeof documentData) => {
@@ -121,157 +89,125 @@ Cordiali saluti,
 [Firma]`;
   };
 
-  const generateDocument = async () => {
-    setIsGenerating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-document', {
-        body: {
-          documentType: documentData.typeKey || 'other',
-          data: documentData,
-          language: 'it',
-        },
-        headers: user ? {} : { 'X-Demo-Mode': 'true' },
-      });
-      const draft = (error || !data?.draftText) ? buildDraftFromData(documentData) : data.draftText;
-      saveToPreview(draft);
-      setChatStep('generated');
-      setMessages((prev) => [
-        ...prev,
-        { type: 'ai', text: '', documentReady: draft },
-      ]);
-    } catch {
-      const draft = buildDraftFromData(documentData);
-      saveToPreview(draft);
-      setChatStep('generated');
-      setMessages((prev) => [
-        ...prev,
-        { type: 'ai', text: '', documentReady: draft },
-      ]);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const handleSend = async () => {
     const text = inputText.trim();
     if (!text) return;
 
     setMessages((prev) => [...prev, { type: 'user', text }]);
+    const userText = text.toLowerCase();
     setInputText('');
     setIsLoading(true);
 
-    const lower = text.toLowerCase();
-    const isConfirm = ['sì', 'si', 'confermo', 'conferma', 'ok', 'perfetto', 'va bene', 'sì generare', 'si generare'].some((w) => lower.includes(w));
-    const skipDetails = /^(no|niente|salta|skip)$/.test(lower.trim());
+    const isConfirm = ['sì', 'si', 'confermo', 'conferma', 'ok', 'perfetto', 'va bene'].some((w) => userText.includes(w));
 
-    setTimeout(async () => {
-      if (chatStep === 'welcome') {
-        const typeKey = detectDocumentType(text);
-        const typeLabel = typeKey !== 'other' ? getTypeLabel(typeKey) : text;
-        setDocumentData((d) => ({ ...d, type: typeLabel, typeKey: typeKey || 'other' }));
-        setChatStep('collecting');
-        setCollectingField('sender');
-        setMessages((prev) => [
-          ...prev,
-          { type: 'ai', text: `Perfetto, una ${typeLabel.toLowerCase()}. Come ti chiami? (mittente)` },
-        ]);
-      } else if (chatStep === 'collecting' && collectingField) {
-        const updatedData = { ...documentData };
-        if (collectingField === 'sender') updatedData.sender = text;
-        else if (collectingField === 'recipient') updatedData.recipient = text;
-        else if (collectingField === 'subject') updatedData.subject = text;
-        else if (collectingField === 'details' && !skipDetails) updatedData.content = text;
-        setDocumentData(updatedData);
+    if (chatStep === 'welcome') {
+      let docType = 'generic';
+      if (userText.includes('lavoro') || userText.includes('datore') || userText.includes('azienda')) docType = 'employer_letter';
+      else if (userText.includes('casa') || userText.includes('affitto') || userText.includes('proprietario')) docType = 'landlord_letter';
+      else if (userText.includes('scuola') || userText.includes('assenze')) docType = 'school_absence';
 
-        const goToConfirm = collectingField === 'details';
-        if (goToConfirm) {
-          setChatStep('confirming');
-          setCollectingField(null);
-          const today = new Date().toISOString().slice(0, 10);
-          const sender = updatedData.sender;
-          const recipient = updatedData.recipient;
-          const subject = updatedData.subject;
-          const content = (collectingField === 'details' && !skipDetails) ? text : updatedData.content;
+      setDocumentData((prev) => ({ ...prev, type: docType, date: new Date().toISOString().split('T')[0] }));
+      setChatStep('collecting');
+      setCollectingField('sender');
+      setTimeout(() => {
+        setMessages((prev) => [...prev, { type: 'ai', text: 'Perfetto! Come ti chiami? (mittente)' }]);
+        setIsLoading(false);
+      }, 500);
+      return;
+    }
+
+    if (chatStep === 'collecting' && collectingField) {
+      const nextData = { ...documentData };
+      let nextField: 'sender' | 'recipient' | 'subject' | 'content' | null = null;
+      let nextQuestion = '';
+
+      if (collectingField === 'sender') {
+        nextData.sender = text;
+        nextField = 'recipient';
+        nextQuestion = "A chi è indirizzata la lettera? (nome azienda/persona)";
+      } else if (collectingField === 'recipient') {
+        nextData.recipient = text;
+        nextField = 'subject';
+        nextQuestion = "Qual è l'oggetto/motivo della lettera?";
+      } else if (collectingField === 'subject') {
+        nextData.subject = text;
+        nextField = 'content';
+        nextQuestion = 'Vuoi aggiungere altri dettagli? (scrivi il contenuto o "No" per saltare)';
+      } else if (collectingField === 'content') {
+        nextData.content = userText === 'no' ? '' : text;
+        nextField = null;
+      }
+
+      setDocumentData(nextData);
+      setCollectingField(nextField);
+
+      if (nextField === null) {
+        setChatStep('confirming');
+        const summary = `Ecco il riepilogo:\n\n📄 Tipo: ${nextData.type}\n✍️ Da: ${nextData.sender}\n📧 A: ${nextData.recipient}\n📅 Data: ${nextData.date || new Date().toISOString().split('T')[0]}\n📝 Oggetto: ${nextData.subject}\nDettagli: ${nextData.content || 'Nessuno'}\n\nTutto corretto? Rispondi "Sì" per generare il documento.`;
+        setTimeout(() => {
+          setMessages((m) => [...m, { type: 'ai', text: summary }]);
+        }, 500);
+      } else {
+        setTimeout(() => {
+          setMessages((m) => [...m, { type: 'ai', text: nextQuestion }]);
+        }, 500);
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    if (chatStep === 'confirming') {
+      if (isConfirm) {
+        setChatStep('generating');
+        setMessages((prev) => [...prev, { type: 'ai', text: '⏳ Sto generando il tuo documento...' }]);
+        setIsLoading(false);
+
+        const d = documentData;
+        const draft = buildDraftFromData(d);
+
+        setTimeout(() => {
+          saveToPreview(draft);
+          setMessages((prev) => prev.slice(0, -1));
           setMessages((prev) => [
             ...prev,
             {
               type: 'ai',
-              text: `📄 Tipo: ${updatedData.type || getTypeLabel(updatedData.typeKey)}\n✍️ Da: ${sender || '—'}\n📧 A: ${recipient || '—'}\n📅 Data: ${today}\n📝 Oggetto: ${subject || '—'}\n\nDettagli: ${content || '—'}\n\nTutto corretto? Rispondi "Sì" per generare il documento o dimmi cosa modificare.`,
+              text: '',
+              documentReady: `📄 IL TUO DOCUMENTO È PRONTO:\n\n${draft}\n\n---\n✅ Puoi ora copiarlo, stamparlo o inviarlo via email usando i pulsanti qui sotto!`,
             },
           ]);
-        } else {
-          const next: 'sender' | 'recipient' | 'subject' | 'details' = collectingField === 'sender' ? 'recipient' : collectingField === 'recipient' ? 'subject' : 'details';
-          setCollectingField(next);
-          const question = next === 'recipient'
-            ? "A chi è indirizzata la lettera? (nome dell'azienda/datore)"
-            : next === 'subject'
-              ? "Qual è l'oggetto/il motivo della lettera?"
-              : 'Vuoi aggiungere altri dettagli importanti? (rispondi "No" per saltare)';
-          setMessages((prev) => [...prev, { type: 'ai', text: question }]);
-        }
-      } else if (chatStep === 'confirming' && isConfirm) {
-        await generateDocument();
-      } else if (chatStep === 'confirming' && !isConfirm) {
-        setMessages((prev) => [
-          ...prev,
-          { type: 'ai', text: 'Per generare il documento rispondi "Sì" o "Confermo".' },
-        ]);
-      } else if (chatStep === 'generated') {
-        setMessages((prev) => [
-          ...prev,
-          { type: 'ai', text: 'Il documento è pronto. Usa Copy, Preview o Print. Per iniziare da capo clicca Clear.' },
-        ]);
+          setChatStep('generated');
+          setHasDocument(true);
+        }, 1500);
+      } else {
+        setTimeout(() => {
+          setMessages((prev) => [...prev, { type: 'ai', text: 'Dimmi cosa modificare o scrivi "Sì" per confermare.' }]);
+          setIsLoading(false);
+        }, 500);
       }
-      setIsLoading(false);
-    }, 600);
+      return;
+    }
+
+    if (chatStep === 'generated') {
+      setTimeout(() => {
+        setMessages((prev) => [...prev, { type: 'ai', text: 'Il documento è pronto. Usa Copy, Preview o Print. Per iniziare da capo clicca Clear.' }]);
+        setIsLoading(false);
+      }, 500);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setMessages((prev) => [...prev, { type: 'user', text: `📎 Ho caricato: ${file.name}` }]);
-      setDocumentData((d) => ({ ...d, type: 'Lettera da documento', typeKey: 'other' }));
+      setDocumentData({ type: 'generic', sender: '', recipient: '', date: new Date().toISOString().split('T')[0], subject: '', content: '' });
       setChatStep('collecting');
       setCollectingField('sender');
       setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          { type: 'ai', text: 'Ho ricevuto il documento. Indicami i dati: come ti chiami? (mittente)' },
-        ]);
+        setMessages((prev) => [...prev, { type: 'ai', text: 'Ho ricevuto il documento. Come ti chiami? (mittente)' }]);
       }, 600);
     }
     e.target.value = '';
-  };
-
-  const compressImage = (file: File, maxSizeKB = 800): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      if (file.size <= maxSizeKB * 1024) {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-        return;
-      }
-      const img = new Image();
-      const objectUrl = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(objectUrl);
-        const canvas = document.createElement('canvas');
-        const maxW = 1200;
-        const scale = img.width > maxW ? maxW / img.width : 1;
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject(new Error('Canvas error'));
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        reject(new Error('Image load failed'));
-      };
-      img.src = objectUrl;
-    });
   };
 
   const handleCamera = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -279,60 +215,62 @@ Cordiali saluti,
     if (!file) return;
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!validTypes.includes(file.type)) {
-      setMessages((prev) => [
-        ...prev,
-        { type: 'ai', text: '❌ Formato non supportato. Usa JPG o PNG.' },
-      ]);
+      setMessages((prev) => [...prev, { type: 'ai', text: '❌ Formato non supportato. Usa JPG o PNG.' }]);
       e.target.value = '';
       return;
     }
 
-    const imageUrl = URL.createObjectURL(file);
-    setMessages((prev) => [
-      ...prev,
-      { type: 'user', text: '📸 Analisi documento in corso...', image: imageUrl },
-    ]);
     setIsProcessingOCR(true);
+    setMessages((prev) => [...prev, { type: 'user', text: '📸 Documento scannerizzato' }]);
 
     try {
-      const imageBase64 = await compressImage(file);
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
 
-      const { data: ocrData, error: ocrError } = await supabase.functions.invoke('process-ocr', {
-        body: { imageBase64, mimeType: file.type.startsWith('image/') ? file.type : 'image/jpeg' },
+      const { data, error } = await supabase.functions.invoke('process-ocr', {
+        body: { imageBase64: base64 },
         headers: user ? {} : { 'X-Demo-Mode': 'true' },
       });
 
-      if (ocrError) throw ocrError;
+      if (error) throw error;
 
-      const analysis = ocrData?.analysis ?? ocrData;
-      const draft = ocrData?.draft_text ?? ocrData?.draftText ?? SAMPLE_LETTER;
-      const docType = analysis?.documentType ?? ocrData?.documentType ?? 'Lettera';
-      const sender = analysis?.sender ?? ocrData?.sender ?? 'Non rilevato';
-      const recipient = analysis?.recipient ?? ocrData?.recipient ?? 'Non rilevato';
-      const date = analysis?.date ?? ocrData?.date ?? 'Non rilevata';
-      const subject = analysis?.subject ?? ocrData?.subject ?? 'Non rilevato';
+      const analysis = data?.analysis ?? data;
+      if (data?.ok && analysis) {
+        const docType = analysis.documentType ?? 'Lettera';
+        const sender = analysis.sender ?? 'Non rilevato';
+        const recipient = analysis.recipient ?? 'Non rilevato';
+        const date = analysis.date ?? new Date().toISOString().split('T')[0];
+        const subject = analysis.subject ?? 'Non rilevato';
 
-      setDocumentData({ type: docType, typeKey: 'other', sender, recipient, date, subject, content: draft });
-      setChatStep('confirming');
+        setOcrResult(analysis);
+        setDocumentData({
+          type: 'response_letter',
+          sender: '',
+          recipient: sender || '',
+          date,
+          subject: `Risposta a: ${subject || 'Documento'}`,
+          content: '',
+        });
+        setChatStep('collecting');
+        setCollectingField('sender');
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          type: 'ai',
-          text: '✅ Ho analizzato il documento! Ecco cosa ho trovato:',
-          ocrData: { documentType: docType, sender, recipient, date, subject },
-          ocrDraft: draft,
-        },
-      ]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: 'ai',
+            text: `✅ Ho analizzato il documento! Ecco cosa ho trovato:\n\n📄 Tipo: ${docType}\n✍️ Da: ${sender}\n📧 A: ${recipient}\n📅 Data: ${date}\n📝 Oggetto: ${subject}\n\nVuoi generare una risposta a questo documento? Indicami i dati mancanti: come ti chiami? (mittente)`,
+          },
+        ]);
+      } else {
+        setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore nella lettura del documento. Riprova con una foto più nitida.' }]);
+      }
     } catch (err) {
       console.error('OCR Error:', err);
-      setMessages((prev) => [
-        ...prev,
-        {
-          type: 'ai',
-          text: '❌ Non sono riuscito a leggere il documento. Prova a scattare una foto più nitida.',
-        },
-      ]);
+      setMessages((prev) => [...prev, { type: 'ai', text: '❌ Errore nella lettura del documento. Riprova con una foto più nitida.' }]);
     } finally {
       setIsProcessingOCR(false);
     }
@@ -342,7 +280,9 @@ Cordiali saluti,
   const handleClear = () => {
     setChatStep('welcome');
     setCollectingField(null);
-    setDocumentData({ type: '', typeKey: '', sender: '', recipient: '', date: '', subject: '', content: '' });
+    setHasDocument(false);
+    setDocumentData({ type: '', sender: '', recipient: '', date: '', subject: '', content: '' });
+    setOcrResult(null);
     setMessages([
       {
         type: 'ai',
@@ -417,64 +357,20 @@ Cordiali saluti,
                   />
                 )}
                 {msg.documentReady ? (
-                  <div>
-                    <div className="font-semibold text-[#b8941f] mb-2">📄 IL TUO DOCUMENTO È PRONTO</div>
-                    <pre className="whitespace-pre-wrap text-sm bg-[#f5f5dc] p-3 rounded border border-[#d4af37]/30 max-h-48 overflow-y-auto">{msg.documentReady}</pre>
-                    <div className="mt-2 text-sm text-[#64748b]">---</div>
-                    <div className="mt-1 text-sm">✅ Puoi ora copiarlo, stamparlo o inviarlo via email usando i pulsanti qui sotto!</div>
-                  </div>
+                  <pre className="whitespace-pre-wrap text-sm bg-[#f5f5dc] p-3 rounded border border-[#d4af37]/30 max-h-64 overflow-y-auto">{msg.documentReady}</pre>
                 ) : (
                   msg.text
-                )}
-                {msg.ocrData && (
-                  <div className="mt-3 p-3 rounded-lg border-2 border-[#d4af37] bg-[#fef9e7] text-[#1e293b] space-y-1 text-sm">
-                    <div><span className="font-semibold text-[#b8941f]">Tipo:</span> {msg.ocrData.documentType}</div>
-                    <div><span className="font-semibold text-[#b8941f]">Mittente:</span> {msg.ocrData.sender}</div>
-                    <div><span className="font-semibold text-[#b8941f]">Destinatario:</span> {msg.ocrData.recipient}</div>
-                    <div><span className="font-semibold text-[#b8941f]">Data:</span> {msg.ocrData.date}</div>
-                    <div><span className="font-semibold text-[#b8941f]">Oggetto:</span> {msg.ocrData.subject}</div>
-                    <p className="mt-2">Vuoi generare una risposta a questo documento?</p>
-                    <div className="flex gap-2 mt-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const draft = msg.ocrDraft ?? buildDraftFromData(documentData) ?? SAMPLE_LETTER;
-                          saveToPreview(draft);
-                          setChatStep('generated');
-                          setMessages((prev) => [
-                            ...prev,
-                            { type: 'ai', text: '', documentReady: draft },
-                          ]);
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-[#d4af37] text-[#0f172a] font-medium hover:bg-[#f4d03f] transition text-sm"
-                      >
-                        Sì, genera risposta
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCollectingField('sender');
-                          setChatStep('collecting');
-                          setInputText('');
-                          setMessages((prev) => [...prev, { type: 'ai', text: 'Indicherò i dati mancanti. Come ti chiami? (mittente)' }]);
-                        }}
-                        className="px-3 py-1.5 rounded-lg border-2 border-[#d4af37] text-[#1e293b] font-medium hover:bg-[#d4af37]/20 transition text-sm"
-                      >
-                        No, indico i dati
-                      </button>
-                    </div>
-                  </div>
                 )}
               </div>
             </div>
           ))}
-          {(isLoading || isGenerating) && (
+          {(isLoading || chatStep === 'generating') && (
             <div className="flex justify-start">
               <div className="w-8 h-8 rounded-full bg-[#d4af37] flex items-center justify-center mr-2">
                 <Scale className="w-5 h-5 text-[#0f172a]" />
               </div>
               <div className="bg-[#e8e4d5] p-3 rounded-2xl rounded-tl-none">
-                {isGenerating ? (
+                {chatStep === 'generating' ? (
                   <span className="text-sm">Sto generando il tuo documento...</span>
                 ) : (
                   <div className="flex gap-1">
@@ -549,10 +445,10 @@ Cordiali saluti,
             type="button"
             onClick={handleCopy}
             disabled={chatStep !== 'generated'}
-          className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
+            className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
               chatStep === 'generated'
                 ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
-                : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed'
+                : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50'
             }`}
           >
             <Copy className="w-5 h-5" />
@@ -566,7 +462,7 @@ Cordiali saluti,
             className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
               chatStep === 'generated'
                 ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
-                : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed'
+                : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50'
             }`}
           >
             <Eye className="w-5 h-5" />
@@ -580,7 +476,7 @@ Cordiali saluti,
             className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
               chatStep === 'generated'
                 ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
-                : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed'
+                : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50'
             }`}
           >
             <Printer className="w-5 h-5" />
@@ -599,7 +495,7 @@ Cordiali saluti,
             <button
               type="button"
               disabled
-              className="py-3 px-4 rounded-lg flex items-center justify-center gap-2 bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed"
+              className="py-3 px-4 rounded-lg flex items-center justify-center gap-2 bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed opacity-50"
             >
               <Mail className="w-5 h-5" />
               Email
