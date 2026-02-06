@@ -2,7 +2,12 @@ import { useChat } from '@/hooks/useChat';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 
-export function ChatEdit() {
+interface ChatEditProps {
+  caseId?: string;
+  draftResponse?: string | null;
+}
+
+export function ChatEdit({ caseId: _caseId, draftResponse: _draftResponse }: ChatEditProps) {
   const { messages, loading, sendMessage } = useChat();
 
   return (

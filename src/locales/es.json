@@ -1,0 +1,6 @@
+{
+  "common": { "close": "Cerrar", "cancel": "Cancelar", "save": "Guardar", "loading": "Cargando..." },
+  "nav": { "home": "Inicio", "dashboard": "Panel", "pricing": "Precios", "login": "Iniciar sesión", "signup": "Registrarse", "logout": "Cerrar sesión" },
+  "home": { "title": "Lexora", "subtitle": "Asistente legal IA" },
+  "auth": { "login": "Iniciar sesión", "signup": "Registrarse", "email": "Email", "password": "Contraseña", "name": "Nombre" }
+}

@@ -8,7 +8,18 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export type Language = 'en' | 'de' | 'it' | 'fr' | 'es';
+export type Language =
+  | 'ar'
+  | 'de'
+  | 'en'
+  | 'es'
+  | 'fr'
+  | 'it'
+  | 'pl'
+  | 'ro'
+  | 'ru'
+  | 'tr'
+  | 'uk';
 
 const STORAGE_KEY = 'lexora_language';
 
@@ -20,7 +31,36 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const SUPPORTED: Language[] = ['en', 'de', 'it', 'fr', 'es'];
+const SUPPORTED: Language[] = ['ar', 'de', 'en', 'es', 'fr', 'it', 'pl', 'ro', 'ru', 'tr', 'uk'];
+
+/** Emoji bandiere per ogni lingua (per UI compatta) */
+export const LANGUAGE_FLAGS: Record<Language, string> = {
+  ar: '🇸🇦',
+  de: '🇩🇪',
+  en: '🇬🇧',
+  es: '🇪🇸',
+  fr: '🇫🇷',
+  it: '🇮🇹',
+  pl: '🇵🇱',
+  ro: '🇷🇴',
+  ru: '🇷🇺',
+  tr: '🇹🇷',
+  uk: '🇺🇦',
+};
+
+export const LANGUAGE_NAMES: Record<Language, string> = {
+  ar: 'العربية',
+  de: 'Deutsch',
+  en: 'English',
+  es: 'Español',
+  fr: 'Français',
+  it: 'Italiano',
+  pl: 'Polski',
+  ro: 'Română',
+  ru: 'Русский',
+  tr: 'Türkçe',
+  uk: 'Українська',
+};
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const { t, i18n } = useTranslation();

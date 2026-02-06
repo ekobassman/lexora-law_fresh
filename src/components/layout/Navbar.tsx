@@ -1,13 +1,14 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguageContext } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/Button';
-import { Menu, X } from 'lucide-react';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
+import { Menu, X, LogOut } from 'lucide-react';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
 
 export function Navbar() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const { t } = useLanguageContext();
   const [open, setOpen] = useState(false);
 
@@ -20,6 +21,7 @@ export function Navbar() {
         </Link>
 
         <div className="hidden md:flex md:items-center md:gap-6">
+          <LanguageSwitcher />
           <Link to="/" className="text-sm hover:underline">
             {t('nav.home')}
           </Link>
@@ -32,9 +34,22 @@ export function Navbar() {
             {t('nav.pricing')}
           </Link>
           {user ? (
-            <Link to="/dashboard">
+            <>
+              <Link to="/dashboard">
                 <Button variant="outline" size="sm">{t('nav.dashboard')}</Button>
               </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  await signOut();
+                  navigate('/');
+                }}
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                {t('nav.logout')}
+              </Button>
+            </>
           ) : (
             <>
               <Link to="/auth">
@@ -58,6 +73,9 @@ export function Navbar() {
 
       {open && (
         <div className="md:hidden border-t px-4 py-4 space-y-2">
+          <div className="py-2">
+            <LanguageSwitcher />
+          </div>
           <Link to="/" className="block py-2" onClick={() => setOpen(false)}>
             {t('nav.home')}
           </Link>
@@ -69,7 +87,18 @@ export function Navbar() {
           <Link to="/pricing" className="block py-2" onClick={() => setOpen(false)}>
             {t('nav.pricing')}
           </Link>
-          {!user && (
+          {user ? (
+            <button
+              className="block py-2 w-full text-left"
+              onClick={async () => {
+                await signOut();
+                setOpen(false);
+                navigate('/');
+              }}
+            >
+              {t('nav.logout')}
+            </button>
+          ) : (
             <>
               <Link to="/auth" className="block py-2" onClick={() => setOpen(false)}>
                 {t('nav.login')}

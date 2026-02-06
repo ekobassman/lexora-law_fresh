@@ -1,6 +1,12 @@
 @import "tailwindcss";
+@config "../tailwind.config.js";
 
 :root {
+  --background: 210 40% 8%;
+  --foreground: 0 0% 98%;
+  --destructive: 0 84% 60%;
+  --muted: 210 40% 15%;
+  --muted-foreground: 210 20% 65%;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;

@@ -2,7 +2,11 @@ import { useChat } from '@/hooks/useChat';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 
-export function ChatDashboard() {
+interface ChatDashboardProps {
+  caseId?: string;
+}
+
+export function ChatDashboard({ caseId: _caseId }: ChatDashboardProps) {
   const { messages, loading, sendMessage } = useChat();
 
   return (

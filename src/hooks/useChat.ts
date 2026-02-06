@@ -10,7 +10,7 @@ export function useChat(options: UseChatOptions = {}) {
   const [loading, setLoading] = useState(false);
 
   const sendMessage = useCallback(
-    async (content: string, role: ChatRole = 'user') => {
+    async (content: string, _role: ChatRole = 'user') => {
       if (!content.trim()) return;
 
       const userMsg: ChatMessage = {
