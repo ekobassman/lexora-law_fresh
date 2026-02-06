@@ -15,7 +15,9 @@ export type Language =
   | 'es'
   | 'fr'
   | 'it'
+  | 'nl'
   | 'pl'
+  | 'pt'
   | 'ro'
   | 'ru'
   | 'tr'
@@ -31,7 +33,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const SUPPORTED: Language[] = ['ar', 'de', 'en', 'es', 'fr', 'it', 'pl', 'ro', 'ru', 'tr', 'uk'];
+const SUPPORTED: Language[] = ['ar', 'de', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'ro', 'ru', 'tr', 'uk'];
 
 /** Emoji bandiere per ogni lingua (per UI compatta) */
 export const LANGUAGE_FLAGS: Record<Language, string> = {
@@ -41,7 +43,9 @@ export const LANGUAGE_FLAGS: Record<Language, string> = {
   es: '🇪🇸',
   fr: '🇫🇷',
   it: '🇮🇹',
+  nl: '🇳🇱',
   pl: '🇵🇱',
+  pt: '🇵🇹',
   ro: '🇷🇴',
   ru: '🇷🇺',
   tr: '🇹🇷',
@@ -55,7 +59,9 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
   es: 'Español',
   fr: 'Français',
   it: 'Italiano',
+  nl: 'Nederlands',
   pl: 'Polski',
+  pt: 'Português',
   ro: 'Română',
   ru: 'Русский',
   tr: 'Türkçe',

@@ -483,7 +483,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
 
         {/* Area messaggi */}
         <div 
-          className="bg-[#f5f5dc] rounded-lg min-h-[260px] max-h-[55vh] sm:max-h-[65vh] mb-4 overflow-y-auto overflow-x-hidden p-3 sm:p-4 space-y-4 border border-[#d4af37]/30 overscroll-contain min-w-0"
+          className="bg-[#f5f0e6] rounded-lg min-h-[260px] max-h-[55vh] sm:max-h-[600px] mb-4 overflow-y-auto overflow-x-hidden p-4 sm:p-6 pt-6 space-y-4 border border-[#d4af37]/30 overscroll-contain min-w-0 break-words"
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {messages.map((msg, idx) => (
@@ -494,7 +494,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
                 </div>
               )}
               <div
-                className={`max-w-[85%] sm:max-w-[90%] min-w-0 p-3 rounded-2xl text-sm sm:text-base whitespace-pre-wrap break-words overflow-hidden ${
+                className={`max-w-[85%] sm:max-w-[90%] min-w-0 p-3 rounded-2xl text-sm sm:text-base whitespace-pre-wrap break-words overflow-y-auto overflow-x-hidden ${
                   msg.type === 'user'
                     ? 'bg-[#d4af37] text-[#0f172a] rounded-tr-none font-medium'
                     : 'bg-[#e8e4d5] text-[#1e293b] rounded-tl-none border border-[#d4af37]/20'

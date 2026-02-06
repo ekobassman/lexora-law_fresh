@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguageContext } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
@@ -9,7 +9,15 @@ export function Navbar() {
   const { user, signOut } = useAuth();
   const { t } = useLanguageContext();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isLanding = location.pathname === '/';
+
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    setMobileOpen(false);
+  };
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -24,31 +32,42 @@ export function Navbar() {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-navy border-b border-gold/20 h-16 md:h-20">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 h-full flex items-center justify-between">
+    <nav className="sticky top-0 z-50 w-full bg-[#0f172a] border-b border-[#d4af37] h-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
         <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2 py-2 shrink-0">
-          <div className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center shrink-0">
-            <div className="absolute inset-0 rounded-full border-2 border-gold/60" />
-            <div className="absolute inset-1 rounded-full border border-gold/30" />
-            <span className="relative font-display text-base sm:text-lg font-semibold text-gold" style={{ fontFamily: 'Georgia, serif' }}>L</span>
+          <div className="relative flex h-10 w-10 items-center justify-center shrink-0 rounded-full border-2 border-[#d4af37]">
+            <span className="font-display text-lg font-semibold text-[#d4af37]" style={{ fontFamily: 'Georgia, serif' }}>L</span>
           </div>
-          <span className="font-display text-lg sm:text-xl font-medium tracking-widest text-ivory uppercase">LEXORA</span>
+          <span className="font-display text-2xl font-medium tracking-widest text-white uppercase">LEXORA</span>
         </Link>
 
         <div className="hidden md:flex md:items-center md:gap-6">
+          {isLanding && !user && (
+            <>
+              <button onClick={() => scrollToSection('how-it-works')} className="text-ivory/70 hover:text-gold transition-colors text-sm font-medium">
+                {t('nav.howItWorks') || 'How it works'}
+              </button>
+              <button onClick={() => scrollToSection('pricing')} className="text-ivory/70 hover:text-gold transition-colors text-sm font-medium">
+                {t('nav.pricing')}
+              </button>
+              <button onClick={() => scrollToSection('faq')} className="text-ivory/70 hover:text-gold transition-colors text-sm font-medium">
+                {t('nav.faq') || 'FAQ'}
+              </button>
+            </>
+          )}
           <LanguageSwitcher />
           <div className="relative" ref={userMenuRef}>
             <button
               type="button"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="w-10 h-10 rounded-full border border-gold/30 flex items-center justify-center text-gold hover:bg-gold hover:text-navy transition bg-graphite"
+              className="w-10 h-10 rounded-full border border-gray-muted/50 flex items-center justify-center text-white hover:bg-navy-medium transition bg-[#1e293b]"
               aria-label="Menu utente"
             >
               <User className="w-5 h-5" />
             </button>
             {userMenuOpen && (
               <div
-              className="absolute right-0 top-full mt-1 z-50 min-w-[200px] rounded-xl py-2 shadow-xl bg-graphite border border-gold/20"
+              className="absolute right-0 top-full mt-1 z-50 min-w-[200px] rounded-xl py-2 shadow-xl bg-[#1e293b] border border-[#d4af37]/30"
               >
                 {user ? (
                   <>
@@ -110,7 +129,7 @@ export function Navbar() {
 
         <button
           type="button"
-          className="md:hidden p-2 rounded-lg hover:bg-graphite transition text-gold"
+          className="md:hidden p-2 rounded-lg hover:bg-[#1e293b] transition text-[#d4af37]"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Menu"
         >
@@ -119,7 +138,20 @@ export function Navbar() {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden bg-graphite border-t border-gold/20 px-4 py-4 space-y-2">
+        <div className="md:hidden bg-[#1e293b] border-t border-[#d4af37]/30 px-4 py-4 space-y-2">
+          {isLanding && !user && (
+            <>
+              <button onClick={() => scrollToSection('how-it-works')} className="block py-3 text-left text-white w-full">
+                {t('nav.howItWorks') || 'How it works'}
+              </button>
+              <button onClick={() => scrollToSection('pricing')} className="block py-3 text-left text-white w-full">
+                {t('nav.pricing')}
+              </button>
+              <button onClick={() => scrollToSection('faq')} className="block py-3 text-left text-white w-full">
+                {t('nav.faq') || 'FAQ'}
+              </button>
+            </>
+          )}
           <LanguageSwitcher />
           {user ? (
             <>
@@ -161,8 +193,6 @@ export function Navbar() {
         </div>
       )}
 
-      {/* Gold divider line */}
-      <div className="h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
     </nav>
   );
 }

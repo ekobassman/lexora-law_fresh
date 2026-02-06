@@ -13,6 +13,8 @@ import ro from '../locales/ro.json';
 import ru from '../locales/ru.json';
 import tr from '../locales/tr.json';
 import uk from '../locales/uk.json';
+import pt from '../locales/pt.json';
+import nl from '../locales/nl.json';
 
 const resources = {
   en: { translation: en },
@@ -26,6 +28,8 @@ const resources = {
   ru: { translation: ru },
   tr: { translation: tr },
   uk: { translation: uk },
+  pt: { translation: pt },
+  nl: { translation: nl },
 };
 
 i18n

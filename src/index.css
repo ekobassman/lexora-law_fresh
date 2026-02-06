@@ -1,54 +1,59 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-/* LEXORA Premium Brand System - Complete from lexora-law-main */
+/* LEXORA Premium Brand System - Pixel-perfect sync from main */
 
 :root {
+  /* Design system - exact hex values */
+  --gold-primary: #d4af37;
+  --gold-hover: #b8941d;
+  --navy-dark: #0f172a;
+  --navy-medium: #1e293b;
+  --beige-cream: #f5f5f0;
+  --beige-chat: #f5f0e6;
+  --white: #ffffff;
+  --gray-body: #4b5563;
+  --gray-muted: #9ca3af;
+
   /* Light theme - main content */
-  --background: 36 27% 95%;
-  --foreground: 209 61% 11%;
+  --background: 36 27% 97%;
+  --foreground: 215 25% 27%;
   --card: 0 0% 100%;
-  --card-foreground: 209 61% 11%;
+  --card-foreground: 215 25% 27%;
   --popover: 0 0% 100%;
-  --popover-foreground: 209 61% 11%;
-  --primary: 209 61% 11%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 36 15% 90%;
-  --secondary-foreground: 209 61% 11%;
+  --popover-foreground: 215 25% 27%;
+  --primary: 43 54% 55%;
+  --primary-foreground: 215 25% 13%;
+  --secondary: 36 20% 94%;
+  --secondary-foreground: 215 25% 27%;
   --muted: 36 15% 92%;
-  --muted-foreground: 209 30% 40%;
+  --muted-foreground: 220 9% 46%;
   --accent: 43 40% 92%;
   --accent-foreground: 43 54% 40%;
   --destructive: 0 65% 45%;
   --destructive-foreground: 0 0% 100%;
-  --border: 36 15% 85%;
-  --input: 36 15% 85%;
+  --border: 36 15% 88%;
+  --input: 36 15% 88%;
   --ring: 43 54% 55%;
   --radius: 0.5rem;
   --success: 161 56% 28%;
   --success-foreground: 0 0% 100%;
   --warning: 43 54% 55%;
-  --warning-foreground: 209 61% 11%;
-  --sidebar-background: 209 61% 11%;
-  --sidebar-foreground: 36 27% 95%;
+  --warning-foreground: 215 25% 13%;
+  --sidebar-background: 222 47% 11%;
+  --sidebar-foreground: 36 27% 97%;
   --sidebar-primary: 43 54% 55%;
-  --sidebar-primary-foreground: 209 61% 11%;
-  --sidebar-accent: 210 25% 16%;
-  --sidebar-accent-foreground: 36 27% 95%;
-  --sidebar-border: 210 25% 25%;
+  --sidebar-primary-foreground: 215 25% 13%;
+  --sidebar-accent: 215 28% 17%;
+  --sidebar-accent-foreground: 36 27% 97%;
+  --sidebar-border: 215 28% 25%;
   --sidebar-ring: 43 54% 55%;
   /* Lexora Custom Tokens */
-  --navy: 209 61% 11%;
-  --graphite: 210 25% 16%;
-  --ivory: 36 27% 95%;
+  --navy: 222 47% 11%;
+  --graphite: 215 28% 17%;
+  --ivory: 36 27% 97%;
   --gold: 43 54% 55%;
   --green: 161 56% 28%;
-  /* Hex fallbacks */
-  --navy-primary: #0f172a;
-  --navy-secondary: #1e293b;
-  --gold-primary: #d4af37;
-  --gold-light: #f4d03f;
-  --gold-dark: #b8941f;
 }
 
 .dark {

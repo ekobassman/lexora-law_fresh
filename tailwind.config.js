@@ -7,8 +7,8 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
-      screens: { "2xl": "1400px" },
+      padding: { DEFAULT: "1rem", sm: "1.5rem", lg: "2rem" },
+      screens: { sm: "640px", md: "768px", lg: "1024px", xl: "1280px", "2xl": "1280px" },
     },
     screens: {
       xs: '375px',
@@ -63,9 +63,15 @@ export default {
           foreground: "hsl(var(--warning-foreground))",
         },
         navy: "hsl(var(--navy))",
+        "navy-medium": "#1e293b",
         graphite: "hsl(var(--graphite))",
         ivory: "hsl(var(--ivory))",
         gold: "hsl(var(--gold))",
+        "gold-hover": "#b8941d",
+        "beige-cream": "#f5f5f0",
+        "beige-chat": "#f5f0e6",
+        "gray-body": "#4b5563",
+        "gray-muted": "#9ca3af",
         green: "hsl(var(--green))",
       },
       borderRadius: {
@@ -88,6 +94,9 @@ export default {
       animation: {
         "fade-in": "fade-in 0.5s ease-out forwards",
         balance: "balance 1.5s ease-in-out infinite",
+      },
+      maxWidth: {
+        "7xl": "80rem",
       },
       boxShadow: {
         premium: "0 4px 20px -4px rgba(11, 28, 45, 0.15), 0 8px 40px -8px rgba(201, 162, 77, 0.1)",
