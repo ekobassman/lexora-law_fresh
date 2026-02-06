@@ -1,0 +1,26 @@
+{
+  "common": {
+    "close": "Chiudi",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "loading": "Caricamento..."
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "pricing": "Prezzi",
+    "login": "Accedi",
+    "signup": "Registrati"
+  },
+  "home": {
+    "title": "Lexora",
+    "subtitle": "Assistente legale AI"
+  },
+  "auth": {
+    "login": "Accedi",
+    "signup": "Registrati",
+    "email": "Email",
+    "password": "Password",
+    "name": "Nome"
+  }
+}

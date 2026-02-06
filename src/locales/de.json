@@ -1,0 +1,26 @@
+{
+  "common": {
+    "close": "Schließen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "loading": "Laden..."
+  },
+  "nav": {
+    "home": "Start",
+    "dashboard": "Dashboard",
+    "pricing": "Preise",
+    "login": "Anmelden",
+    "signup": "Registrieren"
+  },
+  "home": {
+    "title": "Lexora",
+    "subtitle": "KI-Rechtsassistent"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "signup": "Registrieren",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "name": "Name"
+  }
+}
