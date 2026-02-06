@@ -91,8 +91,8 @@ export function Home() {
       </section>
 
       {/* CHAT DEMO SECTION */}
-      <section id="chat-demo" className="bg-[#1e293b] py-20 px-4 scroll-mt-24">
-        <div className="max-w-3xl mx-auto">
+      <section id="chat-demo" className="bg-[#1e293b] py-10 md:py-16 px-4 scroll-mt-20 min-h-[85vh] flex flex-col justify-center">
+        <div className="max-w-3xl mx-auto w-full">
           <ChatDemo />
         </div>
       </section>

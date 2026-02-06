@@ -59,14 +59,20 @@ export function ChatDemo() {
 
   const lastMessageFromUser = useRef(false);
   useEffect(() => {
-    const scroll = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    const scrollChatIntoView = () => {
+      document.getElementById('chat-demo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
     if (lastMessageFromUser.current) {
-      setTimeout(scroll, 100);
+      setTimeout(scrollToBottom, 100);
       lastMessageFromUser.current = false;
     } else if (messages.length > 0) {
       const last = messages[messages.length - 1];
       if (last?.type === 'ai' && (last.ocrContent || last.documentReady)) {
-        setTimeout(scroll, 150);
+        setTimeout(() => {
+          scrollChatIntoView();
+          setTimeout(scrollToBottom, 400);
+        }, 150);
       }
     }
   }, [messages]);
@@ -460,7 +466,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="bg-[#0f172a] rounded-2xl border-2 border-[#d4af37] p-6 max-w-2xl mx-auto shadow-[0_0_40px_rgba(212,175,55,0.15)]">
+      <div className="bg-[#0f172a] rounded-2xl border-2 border-[#d4af37] p-4 sm:p-6 max-w-2xl mx-auto shadow-[0_0_40px_rgba(212,175,55,0.15)]">
         <input
           type="file"
           ref={fileInputRef}
@@ -478,7 +484,10 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
         />
 
         {/* Area messaggi */}
-        <div className="bg-[#f5f5dc] rounded-lg min-h-[220px] max-h-[70vh] mb-4 overflow-y-auto overflow-x-hidden p-4 space-y-4 border border-[#d4af37]/30">
+        <div 
+          className="bg-[#f5f5dc] rounded-lg min-h-[260px] max-h-[55vh] sm:max-h-[65vh] mb-4 overflow-y-auto overflow-x-hidden p-4 space-y-4 border border-[#d4af37]/30 overscroll-contain"
+          style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+        >
           {messages.map((msg, idx) => (
             <div key={idx} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.type === 'ai' && (
@@ -502,11 +511,11 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
                   />
                 )}
                 {msg.documentReady ? (
-                  <pre className="whitespace-pre-wrap break-words text-sm bg-[#f5f5dc] p-3 rounded border border-[#d4af37]/30 max-h-[320px] overflow-y-auto overflow-x-hidden">{msg.documentReady}</pre>
+                  <pre className="whitespace-pre-wrap break-words text-sm bg-[#f5f5dc] p-3 rounded border border-[#d4af37]/30 max-h-[320px] overflow-y-auto overflow-x-hidden overscroll-contain">{msg.documentReady}</pre>
                 ) : msg.ocrContent ? (
-                  <div className="space-y-3">
+                  <div className="space-y-3 min-w-0">
                     <div className="text-xs font-medium text-[#1e293b]/80">CONTENUTO DELLA LETTERA:</div>
-                    <pre className="whitespace-pre-wrap break-words text-sm bg-[#f5f5dc] p-3 rounded border border-[#d4af37]/30 max-h-[280px] overflow-y-auto overflow-x-hidden">{msg.ocrContent}</pre>
+                    <pre className="whitespace-pre-wrap break-words text-sm bg-[#f5f5dc] p-3 rounded border border-[#d4af37]/30 max-h-[360px] overflow-y-auto overflow-x-hidden overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>{msg.ocrContent}</pre>
                     <pre className="whitespace-pre-wrap break-words text-xs border-t border-[#d4af37]/20 pt-2 mt-2">{msg.ocrSummary}</pre>
                   </div>
                 ) : (
