@@ -1,5 +1,5 @@
 import { AuthForms } from '@/components/forms/AuthForms';
 
-export function Auth() {
+export function AuthPage() {
   return <AuthForms />;
 }

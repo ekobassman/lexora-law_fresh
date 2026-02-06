@@ -5,7 +5,7 @@ import { PWAInstallBanner } from '@/components/layout/PWAInstallBanner';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { Home } from '@/pages/Home';
 import { Dashboard } from '@/pages/Dashboard';
-import { Auth } from '@/pages/Auth';
+import { AuthPage } from '@/pages/Auth';
 import { AuthCallback } from '@/pages/AuthCallback';
 import { ResetPassword } from '@/pages/Auth/ResetPassword';
 import { Pricing } from '@/pages/Pricing';
@@ -20,9 +20,9 @@ function App() {
         <div className="flex-1 pt-20">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth" element={<AuthPage />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/letter-preview" element={<LetterPreview />} />
           <Route
