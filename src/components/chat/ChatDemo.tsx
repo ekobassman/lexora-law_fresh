@@ -1,16 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
-import { useLanguageContext } from '@/contexts/LanguageContext';
-import { ChatMessage } from './ChatMessage';
-import {
-  canSendDemoMessage,
-  incrementDemoUsage,
-  getDemoUsageToday,
-  DEMO_LIMIT,
-} from '@/lib/demoLimit';
-import { getDemoReply } from '@/lib/demoChat';
 import {
   Scale,
   Mic,
@@ -26,78 +16,115 @@ import {
 
 const DEMO_PREVIEW_KEY = 'lexora_demo_preview';
 
+const SAMPLE_LETTER = `[Nome mittente]
+[Indirizzo]
+[Data]
+
+[Destinatario]
+[Indirizzo]
+
+Oggetto: Lettera generata da Lexora
+
+Egregi Signori,
+
+La presente per comunicarVi quanto richiesto.
+
+Cordiali saluti,
+[Firma]`;
+
 export function ChatDemo() {
   const { user } = useAuth();
-  const { language } = useLanguageContext();
+  const [messages, setMessages] = useState<Array<{ type: 'ai' | 'user'; text: string }>>([
+    {
+      type: 'ai',
+      text: 'Benvenuto! Sono Lexora, il tuo assistente legale AI. Descrivimi la tua situazione (es. assenza scolastica, lettera al datore di lavoro) e ti aiuterò a redigere un documento formale.',
+    },
+  ]);
+  const [inputText, setInputText] = useState('');
   const [draftText, setDraftText] = useState<string | null>(null);
-  const [inputValue, setInputValue] = useState('');
-  const scanInputRef = useRef<HTMLInputElement>(null);
-  const uploadInputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const canSend = canSendDemoMessage();
-  const used = getDemoUsageToday();
   const hasDocument = !!draftText;
 
-  const onSend = useCallback(
-    async (content: string): Promise<string> => {
-      if (!canSendDemoMessage())
-        return 'Limite giornaliero raggiunto (20 messaggi). Registrati per continuare.';
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
-      incrementDemoUsage();
-      const msgCount = getDemoUsageToday();
-      const prevUserMessages = msgCount - 1;
-
-      const result = getDemoReply(content, prevUserMessages, language);
-      if (result.draftText) {
-        setDraftText(result.draftText);
-        try {
-          sessionStorage.setItem(
-            DEMO_PREVIEW_KEY,
-            JSON.stringify({ text: result.draftText, createdAt: new Date().toISOString() })
-          );
-        } catch {
-          /* ignore */
-        }
-      }
-      return result.text;
-    },
-    [language]
-  );
-
-  const { messages, loading, sendMessage, clearMessages } = useChat({ onSend });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = inputValue.trim();
-    if (!trimmed || disabled) return;
-    sendMessage(trimmed);
-    setInputValue('');
+  const saveToPreview = (text: string) => {
+    setDraftText(text);
+    try {
+      sessionStorage.setItem(
+        DEMO_PREVIEW_KEY,
+        JSON.stringify({ text, createdAt: new Date().toISOString() })
+      );
+    } catch {
+      /* ignore */
+    }
   };
 
-  const disabled = loading || !canSend;
+  const handleSend = async () => {
+    if (!inputText.trim()) return;
 
-  const handleScan = () => scanInputRef.current?.click();
-  const handleUpload = () => uploadInputRef.current?.click();
+    setMessages((prev) => [...prev, { type: 'user', text: inputText }]);
+    setInputText('');
+    setIsLoading(true);
 
-  const handleScanFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTimeout(() => {
+      const reply =
+        inputText.toLowerCase().includes('conferma') || inputText.toLowerCase().includes('sì') || inputText.toLowerCase().includes('ok')
+          ? `Ecco la bozza del documento:\n\n${SAMPLE_LETTER}\n\nRegistrati per salvarla nel Dashboard.`
+          : 'Ho capito la tua richiesta. Per procedere con la redazione del documento, ho bisogno di alcune informazioni specifiche. Potresti indicarmi: 1) Il tuo nome completo, 2) Il destinatario, 3) La data di riferimento? Per generare la bozza rispondi con "Conferma" o "Ok".';
+
+      const hasDraft = reply.includes('Ecco la bozza');
+      if (hasDraft) saveToPreview(SAMPLE_LETTER);
+
+      setMessages((prev) => [...prev, { type: 'ai', text: reply }]);
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      sendMessage(`[Scansione documento: ${file.name}]`);
+      setMessages((prev) => [...prev, { type: 'user', text: `📎 Ho caricato: ${file.name}` }]);
+      setTimeout(() => {
+        setMessages((prev) => [
+          ...prev,
+          { type: 'ai', text: 'Ho ricevuto il documento. Ecco la bozza estratta:' },
+        ]);
+        saveToPreview(SAMPLE_LETTER);
+      }, 800);
     }
     e.target.value = '';
   };
 
-  const handleUploadFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCamera = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      sendMessage(`[Upload file: ${file.name}]`);
+      setMessages((prev) => [...prev, { type: 'user', text: '📸 Documento scannerizzato' }]);
+      setTimeout(() => {
+        setMessages((prev) => [
+          ...prev,
+          { type: 'ai', text: 'Sto elaborando l\'immagine. Ecco la bozza estratta:' },
+        ]);
+        saveToPreview(SAMPLE_LETTER);
+      }, 800);
     }
     e.target.value = '';
   };
 
   const handleClear = () => {
-    clearMessages();
+    setMessages([
+      {
+        type: 'ai',
+        text: 'Benvenuto! Sono Lexora, il tuo assistente legale AI. Descrivimi la tua situazione (es. assenza scolastica, lettera al datore di lavoro) e ti aiuterò a redigere un documento formale.',
+      },
+    ]);
     setDraftText(null);
+    setInputText('');
     try {
       sessionStorage.removeItem(DEMO_PREVIEW_KEY);
     } catch {
@@ -106,98 +133,113 @@ export function ChatDemo() {
   };
 
   const handleCopy = () => {
-    if (!draftText) return;
-    navigator.clipboard.writeText(draftText);
+    if (draftText) {
+      navigator.clipboard.writeText(draftText);
+      alert('Lettera copiata negli appunti!');
+    }
+  };
+
+  const handlePreview = () => {
+    if (hasDocument) window.open('/letter-preview', '_blank');
+  };
+
+  const handlePrint = () => {
+    if (hasDocument) window.open('/letter-preview', '_blank');
   };
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="bg-[#0f172a] rounded-2xl border-2 border-[#d4af37] p-6 max-w-2xl mx-auto shadow-2xl">
+      <div className="bg-[#0f172a] rounded-2xl border-2 border-[#d4af37] p-6 max-w-2xl mx-auto shadow-[0_0_40px_rgba(212,175,55,0.15)]">
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept="image/*,.pdf,.doc,.docx"
+          onChange={handleFileUpload}
+        />
+        <input
+          type="file"
+          ref={cameraInputRef}
+          className="hidden"
+          accept="image/*"
+          capture="environment"
+          onChange={handleCamera}
+        />
+
         {/* Area messaggi */}
-        <div className="bg-[#f5f5dc] rounded-lg h-96 mb-4 overflow-y-auto p-4 space-y-4">
-          {messages.length === 0 && (
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#d4af37] flex-shrink-0 flex items-center justify-center">
-                <Scale className="h-5 w-5 text-[#0f172a]" />
-              </div>
-              <div className="bg-[#1e293b] text-white p-4 rounded-2xl rounded-tl-none max-w-[80%] border border-[rgba(212,175,55,0.2)]">
-                <p>
-                  Benvenuto! Sono Lexora, il tuo assistente legale AI. Descrivimi la tua situazione
-                  (es. assenza scolastica, lettera al datore di lavoro) e ti aiuterò a redigere un
-                  documento formale.
-                </p>
+        <div className="bg-[#f5f5dc] rounded-lg h-80 mb-4 overflow-y-auto p-4 space-y-4 border border-[#d4af37]/30">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {msg.type === 'ai' && (
+                <div className="w-8 h-8 rounded-full bg-[#d4af37] flex items-center justify-center mr-2 flex-shrink-0">
+                  <Scale className="w-5 h-5 text-[#0f172a]" />
+                </div>
+              )}
+              <div
+                className={`max-w-[80%] p-3 rounded-2xl ${
+                  msg.type === 'user'
+                    ? 'bg-[#d4af37] text-[#0f172a] rounded-tr-none font-medium'
+                    : 'bg-[#e8e4d5] text-[#1e293b] rounded-tl-none border border-[#d4af37]/20'
+                }`}
+              >
+                {msg.text}
               </div>
             </div>
-          )}
-          {messages.map((m) => (
-            <ChatMessage key={m.id} message={m} />
           ))}
-          {loading && (
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#d4af37] flex-shrink-0 flex items-center justify-center">
-                <Scale className="h-5 w-5 text-[#0f172a]" />
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="w-8 h-8 rounded-full bg-[#d4af37] flex items-center justify-center mr-2">
+                <Scale className="w-5 h-5 text-[#0f172a]" />
               </div>
-              <div className="bg-[#1e293b] text-white p-4 rounded-2xl rounded-tl-none max-w-[80%] border border-[rgba(212,175,55,0.2)]">
-                <p className="animate-pulse">Riflettendo...</p>
+              <div className="bg-[#e8e4d5] p-3 rounded-2xl rounded-tl-none">
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 bg-[#d4af37] rounded-full animate-bounce" />
+                  <div className="w-2 h-2 bg-[#d4af37] rounded-full animate-bounce [animation-delay:100ms]" />
+                  <div className="w-2 h-2 bg-[#d4af37] rounded-full animate-bounce [animation-delay:200ms]" />
+                </div>
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
-        {/* Input field stilizzato */}
-        <form onSubmit={handleSubmit} className="bg-[#f5f5dc] rounded-full border border-[#d4af37] flex items-center p-2 mb-4">
-          <input
-            ref={scanInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={handleScanFile}
-            aria-hidden
-          />
-          <input
-            ref={uploadInputRef}
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.webp"
-            className="hidden"
-            onChange={handleUploadFile}
-            aria-hidden
-          />
+        {/* Input field */}
+        <div className="bg-[#f5f5dc] rounded-full border-2 border-[#d4af37] flex items-center p-2 mb-4 shadow-inner">
           <button
             type="button"
-            className="w-10 h-10 rounded-full border border-[#d4af37] flex items-center justify-center text-[#d4af37] hover:bg-[#d4af37] hover:text-[#0f172a] transition flex-shrink-0"
-            aria-label="Microfono"
+            className="w-10 h-10 rounded-full border-2 border-[#d4af37] flex items-center justify-center text-[#d4af37] hover:bg-[#d4af37] hover:text-[#0f172a] transition flex-shrink-0"
+            onClick={() => alert('Funzione microfono in arrivo...')}
           >
             <Mic className="w-5 h-5" />
           </button>
           <input
             type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={
-              !canSend
-                ? `Limite raggiunto (${DEMO_LIMIT}/giorno). Registrati per continuare.`
-                : 'Write here...'
-            }
-            disabled={disabled}
-            className="flex-1 bg-transparent border-none outline-none px-4 text-[#1e293b] placeholder-[#999] min-w-0"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSend(); } }}
+            placeholder="Write here..."
+            className="flex-1 bg-transparent border-none outline-none px-4 text-[#1e293b] placeholder-[#999] text-base min-w-0"
           />
           <button
-            type="submit"
-            disabled={disabled || !inputValue.trim()}
-            className="w-10 h-10 rounded-full bg-[#94a3b8] flex items-center justify-center text-white hover:bg-[#d4af37] transition flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Invia"
+            type="button"
+            onClick={handleSend}
+            disabled={!inputText.trim()}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition flex-shrink-0 ${
+              inputText.trim()
+                ? 'bg-[#d4af37] text-[#0f172a] hover:bg-[#f4d03f]'
+                : 'bg-[#94a3b8] text-white cursor-not-allowed'
+            }`}
           >
             <Send className="w-5 h-5" />
           </button>
-        </form>
+        </div>
 
-        {/* Griglia pulsanti azione */}
+        {/* Griglia pulsanti */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <button
             type="button"
-            onClick={handleScan}
-            className="bg-[#1e293b] border border-[rgba(212,175,55,0.3)] text-[#d4af37] py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:border-[#d4af37] transition"
+            onClick={() => cameraInputRef.current?.click()}
+            className="bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:border-[#d4af37] hover:bg-[#1e293b]/80 transition"
           >
             <Camera className="w-5 h-5" />
             Scan document
@@ -205,8 +247,8 @@ export function ChatDemo() {
 
           <button
             type="button"
-            onClick={handleUpload}
-            className="bg-[#1e293b] border border-[rgba(212,175,55,0.3)] text-[#d4af37] py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:border-[#d4af37] transition"
+            onClick={() => fileInputRef.current?.click()}
+            className="bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:border-[#d4af37] hover:bg-[#1e293b]/80 transition"
           >
             <Paperclip className="w-5 h-5" />
             Upload file
@@ -214,48 +256,64 @@ export function ChatDemo() {
 
           <button
             type="button"
-            onClick={hasDocument ? handleCopy : undefined}
+            onClick={handleCopy}
             disabled={!hasDocument}
-            className="bg-[#1e293b] border border-[rgba(212,175,55,0.3)] py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition disabled:cursor-not-allowed disabled:opacity-60"
-            style={{ color: hasDocument ? '#d4af37' : '#64748b' }}
+            className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
+              hasDocument
+                ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
+                : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed'
+            }`}
           >
             <Copy className="w-5 h-5" />
             Copy letter
           </button>
 
-          <Link
-            to={hasDocument ? '/letter-preview' : '#'}
-            target={hasDocument ? '_blank' : undefined}
-            rel={hasDocument ? 'noopener noreferrer' : undefined}
-            className={`bg-[#1e293b] border border-[rgba(212,175,55,0.3)] py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
-              hasDocument ? 'text-[#d4af37] hover:border-[#d4af37]' : 'text-[#64748b] opacity-60 cursor-not-allowed pointer-events-none'
+          <button
+            type="button"
+            onClick={handlePreview}
+            disabled={!hasDocument}
+            className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
+              hasDocument
+                ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
+                : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed'
             }`}
           >
             <Eye className="w-5 h-5" />
             Preview
-          </Link>
+          </button>
 
-          <a
-            href={hasDocument ? '/letter-preview' : '#'}
-            target={hasDocument ? '_blank' : undefined}
-            rel={hasDocument ? 'noopener noreferrer' : undefined}
-            className={`bg-[#1e293b] border border-[rgba(212,175,55,0.3)] py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
-              hasDocument ? 'text-[#d4af37] hover:border-[#d4af37]' : 'text-[#64748b] opacity-60 cursor-not-allowed pointer-events-none'
+          <button
+            type="button"
+            onClick={handlePrint}
+            disabled={!hasDocument}
+            className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
+              hasDocument
+                ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
+                : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed'
             }`}
           >
             <Printer className="w-5 h-5" />
             Print
-          </a>
+          </button>
 
-          <a
-            href={hasDocument ? `mailto:?body=${encodeURIComponent(draftText ?? '')}` : '#'}
-            className={`bg-[#1e293b] border border-[rgba(212,175,55,0.3)] py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
-              hasDocument ? 'text-[#d4af37] hover:border-[#d4af37]' : 'text-[#64748b] opacity-60 cursor-not-allowed pointer-events-none'
-            }`}
-          >
-            <Mail className="w-5 h-5" />
-            Email
-          </a>
+          {hasDocument ? (
+            <a
+              href={`mailto:?body=${encodeURIComponent(draftText ?? '')}`}
+              className="py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]"
+            >
+              <Mail className="w-5 h-5" />
+              Email
+            </a>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="py-3 px-4 rounded-lg flex items-center justify-center gap-2 bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed"
+            >
+              <Mail className="w-5 h-5" />
+              Email
+            </button>
+          )}
         </div>
 
         {/* Pulsante Clear */}
@@ -269,34 +327,24 @@ export function ChatDemo() {
         </button>
       </div>
 
-      <p className="text-xs text-slate-400 text-center">
-        Messaggi oggi: {used}/{DEMO_LIMIT}
-      </p>
-
-      {/* Preview bozza - Salva nel Dashboard */}
-      {draftText && (
-        <div className="bg-[#1e293b] rounded-2xl p-6 space-y-4 border border-[rgba(212,175,55,0.3)] max-w-2xl mx-auto">
-          <h3 className="flex items-center gap-2 font-semibold text-[#d4af37]">Anteprima bozza</h3>
-          <pre className="whitespace-pre-wrap text-sm max-h-48 overflow-y-auto rounded-lg p-4 bg-[#0f172a] text-white">
-            {draftText}
-          </pre>
-          <div className="flex flex-wrap gap-2">
-            {user ? (
-              <Link
-                to="/dashboard"
-                className="inline-flex items-center gap-2 bg-[#d4af37] text-[#0f172a] px-4 py-2 rounded-lg font-semibold hover:bg-[#f4d03f] transition"
-              >
-                Salva nel Dashboard
-              </Link>
-            ) : (
-              <Link
-                to="/auth?mode=signup&redirect=/dashboard"
-                className="inline-flex items-center gap-2 bg-[#d4af37] text-[#0f172a] px-4 py-2 rounded-lg font-semibold hover:bg-[#f4d03f] transition"
-              >
-                Registrati per salvare nel Dashboard
-              </Link>
-            )}
-          </div>
+      {/* Salva nel Dashboard */}
+      {hasDocument && (
+        <div className="max-w-2xl mx-auto flex justify-center">
+          {user ? (
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-2 bg-[#d4af37] text-[#0f172a] px-6 py-3 rounded-lg font-semibold hover:bg-[#f4d03f] transition"
+            >
+              Salva nel Dashboard
+            </Link>
+          ) : (
+            <Link
+              to="/auth?mode=signup&redirect=/dashboard"
+              className="inline-flex items-center gap-2 bg-[#d4af37] text-[#0f172a] px-6 py-3 rounded-lg font-semibold hover:bg-[#f4d03f] transition"
+            >
+              Registrati per salvare nel Dashboard
+            </Link>
+          )}
         </div>
       )}
     </div>
