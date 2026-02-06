@@ -31,7 +31,7 @@ export function ChatDemo() {
     subject: '',
     content: '',
   });
-  const [, setOcrResult] = useState<Record<string, string> | null>(null);
+  const [ocrResult, setOcrResult] = useState<Record<string, string> | null>(null);
   const [messages, setMessages] = useState<Array<{
     type: 'ai' | 'user';
     text: string;
@@ -54,9 +54,13 @@ export function ChatDemo() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
 
+  const lastMessageFromUser = useRef(false);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading, chatStep]);
+    if (lastMessageFromUser.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      lastMessageFromUser.current = false;
+    }
+  }, [messages]);
 
   const saveToPreview = (text: string) => {
     setDraftText(text);
@@ -94,11 +98,71 @@ Cordiali saluti,
     if (!text) return;
 
     setMessages((prev) => [...prev, { type: 'user', text }]);
+    lastMessageFromUser.current = true;
     const userText = text.toLowerCase();
     setInputText('');
     setIsLoading(true);
 
+    const isYes = ['sì', 'si', 'sì', 'yes'].some((w) => userText === w || userText.trim() === w);
+    const isNo = ['no', 'nò'].some((w) => userText === w || userText.trim() === w);
     const isConfirm = ['sì', 'si', 'confermo', 'conferma', 'ok', 'perfetto', 'va bene'].some((w) => userText.includes(w));
+
+    if (chatStep === 'collecting' && ocrResult && collectingField === 'sender') {
+      if (isYes) {
+        setChatStep('confirming');
+        setCollectingField(null);
+        const d = documentData;
+        const summary = `Ecco i dati che userò:
+
+• Tipo: ${d.type || 'Lettera'}
+• Mittente (tu): da indicare
+• Destinatario: ${d.recipient || '—'}
+• Data: ${d.date || '—'}
+• Oggetto: ${d.subject || '—'}
+
+Scrivi il tuo nome per confermare e generare il documento.`;
+        setTimeout(() => setMessages((m) => [...m, { type: 'ai', text: summary }]), 500);
+      } else if (isNo) {
+        setOcrResult(null);
+        setDocumentData({ type: '', sender: '', recipient: '', date: '', subject: '', content: '' });
+        setCollectingField('sender');
+        setTimeout(() => setMessages((m) => [...m, { type: 'ai', text: 'Nessun problema. Come ti chiami? (mittente)' }]), 500);
+      } else {
+        setDocumentData((prev) => ({ ...prev, sender: text }));
+        setChatStep('confirming');
+        setCollectingField(null);
+        const d = { ...documentData, sender: text };
+        const summary = `Ecco il riepilogo:
+
+• Tipo: ${d.type || 'Lettera'}
+• Mittente: ${d.sender}
+• Destinatario: ${d.recipient || '—'}
+• Data: ${d.date || '—'}
+• Oggetto: ${d.subject || '—'}
+
+Tutto corretto? Rispondi "Sì" o "Confermo" per generare il documento.`;
+        setTimeout(() => setMessages((m) => [...m, { type: 'ai', text: summary }]), 500);
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    if (chatStep === 'confirming' && !documentData.sender && ocrResult) {
+      setDocumentData((prev) => ({ ...prev, sender: text }));
+      const d = { ...documentData, sender: text };
+      const summary = `Ecco il riepilogo:
+
+• Tipo: ${d.type || 'Lettera'}
+• Mittente: ${d.sender}
+• Destinatario: ${d.recipient || '—'}
+• Data: ${d.date || '—'}
+• Oggetto: ${d.subject || '—'}
+
+Tutto corretto? Rispondi "Sì" o "Confermo" per generare il documento.`;
+      setTimeout(() => setMessages((m) => [...m, { type: 'ai', text: summary }]), 500);
+      setIsLoading(false);
+      return;
+    }
 
     if (chatStep === 'welcome') {
       let docType = 'generic';
@@ -143,7 +207,16 @@ Cordiali saluti,
 
       if (nextField === null) {
         setChatStep('confirming');
-        const summary = `Ecco il riepilogo:\n\n📄 Tipo: ${nextData.type}\n✍️ Da: ${nextData.sender}\n📧 A: ${nextData.recipient}\n📅 Data: ${nextData.date || new Date().toISOString().split('T')[0]}\n📝 Oggetto: ${nextData.subject}\nDettagli: ${nextData.content || 'Nessuno'}\n\nTutto corretto? Rispondi "Sì" per generare il documento.`;
+        const summary = `Ecco il riepilogo:
+
+• Tipo: ${nextData.type}
+• Mittente: ${nextData.sender}
+• Destinatario: ${nextData.recipient}
+• Data: ${nextData.date || new Date().toISOString().split('T')[0]}
+• Oggetto: ${nextData.subject}
+• Dettagli: ${nextData.content || 'Nessuno'}
+
+Tutto corretto? Rispondi "Sì" per generare il documento.`;
         setTimeout(() => {
           setMessages((m) => [...m, { type: 'ai', text: summary }]);
         }, 500);
@@ -290,7 +363,20 @@ Cordiali saluti,
         ...prev,
         {
           type: 'ai',
-          text: `✅ Documento analizzato!\n\n📄 Tipo: ${analysis.documentType}\n✍️ Da: ${sender}\n📧 A: ${recipient}\n📅 Data: ${date}\n📝 Oggetto: ${subject}\n\nVuoi che prepari una risposta? Indicami i dati mancanti: come ti chiami? (mittente)`,
+          text: `Documento analizzato!
+
+CONTENUTO DELLA LETTERA:
+─────────────────────────
+${extractedText.substring(0, 400)}${extractedText.length > 400 ? '... (testo troncato)' : ''}
+─────────────────────────
+
+DATI ESTRATTI:
+• Mittente: ${sender || 'Non rilevato'}
+• Destinatario: ${recipient || 'Non rilevato'}
+• Data: ${date}
+• Oggetto: ${subject || 'Non rilevato'}
+
+Vuoi che prepari una risposta? Scrivi SI per usare questi dati, oppure NO per inserirli manualmente.`,
         },
       ]);
     } catch (err) {
@@ -370,7 +456,7 @@ Cordiali saluti,
                 </div>
               )}
               <div
-                className={`max-w-[80%] p-3 rounded-2xl ${
+                className={`max-w-[90%] p-3 rounded-2xl text-base whitespace-pre-wrap ${
                   msg.type === 'user'
                     ? 'bg-[#d4af37] text-[#0f172a] rounded-tr-none font-medium'
                     : 'bg-[#e8e4d5] text-[#1e293b] rounded-tl-none border border-[#d4af37]/20'
