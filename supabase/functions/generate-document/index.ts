@@ -16,10 +16,25 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { documentType, data, language, letterFormat } = body;
+    const { data } = body;
+    const d = data || {};
 
-    // TODO: integrazione OpenAI per generazione documento
-    const draftText = `[Bozza generata] Tipo: ${documentType}, lingua: ${language}. Dati: ${JSON.stringify(data)}`;
+    const today = new Date().toISOString().slice(0, 10);
+    const draftText = `${d.sender || '[Mittente]'}
+[Indirizzo]
+${d.date || today}
+
+${d.recipient || '[Destinatario]'}
+[Indirizzo]
+
+Oggetto: ${d.subject || '[Oggetto]'}
+
+Egregi Signori,
+
+${d.content || 'La presente per comunicarVi quanto richiesto.'}
+
+Cordiali saluti,
+[Firma]`;
 
     return new Response(
       JSON.stringify({ ok: true, draftText }),

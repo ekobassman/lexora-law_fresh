@@ -37,18 +37,22 @@ Cordiali saluti,
 export function ChatDemo() {
   const { user } = useAuth();
   const [chatStep, setChatStep] = useState<'welcome' | 'collecting' | 'confirming' | 'generated'>('welcome');
+  const [collectingField, setCollectingField] = useState<'sender' | 'recipient' | 'subject' | 'details' | null>(null);
   const [documentData, setDocumentData] = useState({
     type: '',
+    typeKey: '' as '' | 'employer_letter' | 'landlord_letter' | 'school_absence' | 'other',
     sender: '',
     recipient: '',
     date: '',
     subject: '',
     content: '',
   });
+  const [isGenerating, setIsGenerating] = useState(false);
   const [messages, setMessages] = useState<Array<{
     type: 'ai' | 'user';
     text: string;
     image?: string;
+    documentReady?: string;
     ocrData?: { documentType: string; sender: string; recipient: string; date: string; subject: string };
     ocrDraft?: string;
   }>>([
@@ -69,7 +73,7 @@ export function ChatDemo() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, isGenerating]);
 
   const saveToPreview = (text: string) => {
     setDraftText(text);
@@ -81,6 +85,21 @@ export function ChatDemo() {
     } catch {
       /* ignore */
     }
+  };
+
+  const detectDocumentType = (text: string): '' | 'employer_letter' | 'landlord_letter' | 'school_absence' | 'other' => {
+    const t = text.toLowerCase();
+    if (/\b(lavoro|datore|azienda|dipendente)\b/.test(t)) return 'employer_letter';
+    if (/\b(casa|affitto|proprietario|inquilino|locazione)\b/.test(t)) return 'landlord_letter';
+    if (/\b(scuola|assenza|scolastica|preside|docente)\b/.test(t)) return 'school_absence';
+    return 'other';
+  };
+
+  const getTypeLabel = (key: string) => {
+    if (key === 'employer_letter') return 'Lettera al datore di lavoro';
+    if (key === 'landlord_letter') return 'Lettera al proprietario di casa';
+    if (key === 'school_absence') return 'Lettera alle autorità scolastiche';
+    return 'Lettera formale';
   };
 
   const buildDraftFromData = (data: typeof documentData) => {
@@ -96,10 +115,41 @@ Oggetto: ${data.subject || '[Oggetto]'}
 
 Egregi Signori,
 
-La presente per comunicarVi quanto richiesto.
+${data.content || 'La presente per comunicarVi quanto richiesto.'}
 
 Cordiali saluti,
 [Firma]`;
+  };
+
+  const generateDocument = async () => {
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-document', {
+        body: {
+          documentType: documentData.typeKey || 'other',
+          data: documentData,
+          language: 'it',
+        },
+        headers: user ? {} : { 'X-Demo-Mode': 'true' },
+      });
+      const draft = (error || !data?.draftText) ? buildDraftFromData(documentData) : data.draftText;
+      saveToPreview(draft);
+      setChatStep('generated');
+      setMessages((prev) => [
+        ...prev,
+        { type: 'ai', text: '', documentReady: draft },
+      ]);
+    } catch {
+      const draft = buildDraftFromData(documentData);
+      saveToPreview(draft);
+      setChatStep('generated');
+      setMessages((prev) => [
+        ...prev,
+        { type: 'ai', text: '', documentReady: draft },
+      ]);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSend = async () => {
@@ -111,88 +161,84 @@ Cordiali saluti,
     setIsLoading(true);
 
     const lower = text.toLowerCase();
-    const isConfirm = ['conferma', 'confermo', 'sì', 'si', 'ok', 'perfetto', 'va bene'].some((w) => lower.includes(w));
+    const isConfirm = ['sì', 'si', 'confermo', 'conferma', 'ok', 'perfetto', 'va bene', 'sì generare', 'si generare'].some((w) => lower.includes(w));
+    const skipDetails = /^(no|niente|salta|skip)$/.test(lower.trim());
 
-    setTimeout(() => {
+    setTimeout(async () => {
       if (chatStep === 'welcome') {
-        setDocumentData((d) => ({ ...d, type: text }));
+        const typeKey = detectDocumentType(text);
+        const typeLabel = typeKey !== 'other' ? getTypeLabel(typeKey) : text;
+        setDocumentData((d) => ({ ...d, type: typeLabel, typeKey: typeKey || 'other' }));
         setChatStep('collecting');
+        setCollectingField('sender');
         setMessages((prev) => [
           ...prev,
-          {
-            type: 'ai',
-            text: 'Perfetto! Ho bisogno di: 1) Il tuo nome (mittente), 2) Il destinatario, 3) La data (opzionale), 4) Il motivo/oggetto. Puoi indicarmeli in un messaggio?',
-          },
+          { type: 'ai', text: `Perfetto, una ${typeLabel.toLowerCase()}. Come ti chiami? (mittente)` },
         ]);
-      } else if (chatStep === 'collecting') {
-        const parts = text.split(/[,;]/).map((p) => p.trim()).filter(Boolean);
-        const sender = (parts[0] ?? documentData.sender) || 'da indicare';
-        const recipient = (parts[1] ?? documentData.recipient) || 'da indicare';
-        const date = (parts[2] ?? documentData.date) || 'da indicare';
-        const subject = (parts[3] ?? (parts.length > 2 ? parts.slice(2).join(', ') : documentData.subject)) || 'da indicare';
-        setDocumentData((d) => ({
-          ...d,
-          sender: parts[0] ?? d.sender,
-          recipient: parts[1] ?? d.recipient,
-          date: parts[2] ?? d.date,
-          subject: parts[3] ?? d.subject,
-          content: text,
-        }));
-        setChatStep('confirming');
-        setMessages((prev) => [
-          ...prev,
-          {
-            type: 'ai',
-            text: `Riepilogo:\n• Tipo: ${documentData.type || 'Lettera'}\n• Mittente: ${sender}\n• Destinatario: ${recipient}\n• Data: ${date}\n• Oggetto: ${subject}\n\nConfermi? Rispondi "Conferma" o "Ok" per generare il documento.`,
-          },
-        ]);
+      } else if (chatStep === 'collecting' && collectingField) {
+        const updatedData = { ...documentData };
+        if (collectingField === 'sender') updatedData.sender = text;
+        else if (collectingField === 'recipient') updatedData.recipient = text;
+        else if (collectingField === 'subject') updatedData.subject = text;
+        else if (collectingField === 'details' && !skipDetails) updatedData.content = text;
+        setDocumentData(updatedData);
+
+        const goToConfirm = collectingField === 'details';
+        if (goToConfirm) {
+          setChatStep('confirming');
+          setCollectingField(null);
+          const today = new Date().toISOString().slice(0, 10);
+          const sender = updatedData.sender;
+          const recipient = updatedData.recipient;
+          const subject = updatedData.subject;
+          const content = (collectingField === 'details' && !skipDetails) ? text : updatedData.content;
+          setMessages((prev) => [
+            ...prev,
+            {
+              type: 'ai',
+              text: `📄 Tipo: ${updatedData.type || getTypeLabel(updatedData.typeKey)}\n✍️ Da: ${sender || '—'}\n📧 A: ${recipient || '—'}\n📅 Data: ${today}\n📝 Oggetto: ${subject || '—'}\n\nDettagli: ${content || '—'}\n\nTutto corretto? Rispondi "Sì" per generare il documento o dimmi cosa modificare.`,
+            },
+          ]);
+        } else {
+          const next: 'sender' | 'recipient' | 'subject' | 'details' = collectingField === 'sender' ? 'recipient' : collectingField === 'recipient' ? 'subject' : 'details';
+          setCollectingField(next);
+          const question = next === 'recipient'
+            ? "A chi è indirizzata la lettera? (nome dell'azienda/datore)"
+            : next === 'subject'
+              ? "Qual è l'oggetto/il motivo della lettera?"
+              : 'Vuoi aggiungere altri dettagli importanti? (rispondi "No" per saltare)';
+          setMessages((prev) => [...prev, { type: 'ai', text: question }]);
+        }
       } else if (chatStep === 'confirming' && isConfirm) {
-        const data = documentData;
-        const draft = buildDraftFromData(data);
-        saveToPreview(draft);
-        setChatStep('generated');
-        setMessages((prev) => [
-          ...prev,
-          { type: 'ai', text: `Ecco la bozza del documento:\n\n${draft}\n\nRegistrati per salvarla nel Dashboard.` },
-        ]);
+        await generateDocument();
       } else if (chatStep === 'confirming' && !isConfirm) {
         setMessages((prev) => [
           ...prev,
-          { type: 'ai', text: 'Per generare il documento rispondi "Conferma" o "Ok".' },
+          { type: 'ai', text: 'Per generare il documento rispondi "Sì" o "Confermo".' },
         ]);
-      } else {
+      } else if (chatStep === 'generated') {
         setMessages((prev) => [
           ...prev,
           { type: 'ai', text: 'Il documento è pronto. Usa Copy, Preview o Print. Per iniziare da capo clicca Clear.' },
         ]);
       }
       setIsLoading(false);
-    }, 800);
+    }, 600);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setMessages((prev) => [...prev, { type: 'user', text: `📎 Ho caricato: ${file.name}` }]);
-      setDocumentData((d) => ({ ...d, type: 'Documento caricato' }));
-      setChatStep('confirming');
+      setDocumentData((d) => ({ ...d, type: 'Lettera da documento', typeKey: 'other' }));
+      setChatStep('collecting');
+      setCollectingField('sender');
       setTimeout(() => {
         setMessages((prev) => [
           ...prev,
-          {
-            type: 'ai',
-            text: 'Ho ricevuto il documento. Descrivi brevemente di cosa si tratta (mittente, destinatario, oggetto) oppure clicca "Genera risposta" per una bozza generica.',
-            ocrData: {
-              documentType: 'Lettera',
-              sender: 'Da indicare',
-              recipient: 'Da indicare',
-              date: new Date().toISOString().slice(0, 10),
-              subject: 'Da indicare',
-            },
-            ocrDraft: SAMPLE_LETTER,
-          },
+          { type: 'ai', text: 'Ho ricevuto il documento. Indicami i dati: come ti chiami? (mittente)' },
         ]);
-      }, 800);
+      }, 600);
     }
     e.target.value = '';
   };
@@ -266,7 +312,7 @@ Cordiali saluti,
       const date = analysis?.date ?? ocrData?.date ?? 'Non rilevata';
       const subject = analysis?.subject ?? ocrData?.subject ?? 'Non rilevato';
 
-      setDocumentData({ type: docType, sender, recipient, date, subject, content: draft });
+      setDocumentData({ type: docType, typeKey: 'other', sender, recipient, date, subject, content: draft });
       setChatStep('confirming');
 
       setMessages((prev) => [
@@ -295,7 +341,8 @@ Cordiali saluti,
 
   const handleClear = () => {
     setChatStep('welcome');
-    setDocumentData({ type: '', sender: '', recipient: '', date: '', subject: '', content: '' });
+    setCollectingField(null);
+    setDocumentData({ type: '', typeKey: '', sender: '', recipient: '', date: '', subject: '', content: '' });
     setMessages([
       {
         type: 'ai',
@@ -369,7 +416,16 @@ Cordiali saluti,
                     onLoad={() => URL.revokeObjectURL(msg.image!)}
                   />
                 )}
-                {msg.text}
+                {msg.documentReady ? (
+                  <div>
+                    <div className="font-semibold text-[#b8941f] mb-2">📄 IL TUO DOCUMENTO È PRONTO</div>
+                    <pre className="whitespace-pre-wrap text-sm bg-[#f5f5dc] p-3 rounded border border-[#d4af37]/30 max-h-48 overflow-y-auto">{msg.documentReady}</pre>
+                    <div className="mt-2 text-sm text-[#64748b]">---</div>
+                    <div className="mt-1 text-sm">✅ Puoi ora copiarlo, stamparlo o inviarlo via email usando i pulsanti qui sotto!</div>
+                  </div>
+                ) : (
+                  msg.text
+                )}
                 {msg.ocrData && (
                   <div className="mt-3 p-3 rounded-lg border-2 border-[#d4af37] bg-[#fef9e7] text-[#1e293b] space-y-1 text-sm">
                     <div><span className="font-semibold text-[#b8941f]">Tipo:</span> {msg.ocrData.documentType}</div>
@@ -377,6 +433,7 @@ Cordiali saluti,
                     <div><span className="font-semibold text-[#b8941f]">Destinatario:</span> {msg.ocrData.recipient}</div>
                     <div><span className="font-semibold text-[#b8941f]">Data:</span> {msg.ocrData.date}</div>
                     <div><span className="font-semibold text-[#b8941f]">Oggetto:</span> {msg.ocrData.subject}</div>
+                    <p className="mt-2">Vuoi generare una risposta a questo documento?</p>
                     <div className="flex gap-2 mt-3">
                       <button
                         type="button"
@@ -384,18 +441,26 @@ Cordiali saluti,
                           const draft = msg.ocrDraft ?? buildDraftFromData(documentData) ?? SAMPLE_LETTER;
                           saveToPreview(draft);
                           setChatStep('generated');
-                          setMessages((prev) => [...prev, { type: 'ai', text: `Ecco la bozza del documento:\n\n${draft}\n\nRegistrati per salvarla nel Dashboard.` }]);
+                          setMessages((prev) => [
+                            ...prev,
+                            { type: 'ai', text: '', documentReady: draft },
+                          ]);
                         }}
                         className="px-3 py-1.5 rounded-lg bg-[#d4af37] text-[#0f172a] font-medium hover:bg-[#f4d03f] transition text-sm"
                       >
-                        Genera risposta
+                        Sì, genera risposta
                       </button>
                       <button
                         type="button"
-                        onClick={() => setInputText(`Modifica: mittente ${msg.ocrData!.sender}, oggetto ${msg.ocrData!.subject}`)}
+                        onClick={() => {
+                          setCollectingField('sender');
+                          setChatStep('collecting');
+                          setInputText('');
+                          setMessages((prev) => [...prev, { type: 'ai', text: 'Indicherò i dati mancanti. Come ti chiami? (mittente)' }]);
+                        }}
                         className="px-3 py-1.5 rounded-lg border-2 border-[#d4af37] text-[#1e293b] font-medium hover:bg-[#d4af37]/20 transition text-sm"
                       >
-                        Modifica
+                        No, indico i dati
                       </button>
                     </div>
                   </div>
@@ -403,17 +468,21 @@ Cordiali saluti,
               </div>
             </div>
           ))}
-          {isLoading && (
+          {(isLoading || isGenerating) && (
             <div className="flex justify-start">
               <div className="w-8 h-8 rounded-full bg-[#d4af37] flex items-center justify-center mr-2">
                 <Scale className="w-5 h-5 text-[#0f172a]" />
               </div>
               <div className="bg-[#e8e4d5] p-3 rounded-2xl rounded-tl-none">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-[#d4af37] rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-[#d4af37] rounded-full animate-bounce [animation-delay:100ms]" />
-                  <div className="w-2 h-2 bg-[#d4af37] rounded-full animate-bounce [animation-delay:200ms]" />
-                </div>
+                {isGenerating ? (
+                  <span className="text-sm">Sto generando il tuo documento...</span>
+                ) : (
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-[#d4af37] rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-[#d4af37] rounded-full animate-bounce [animation-delay:100ms]" />
+                    <div className="w-2 h-2 bg-[#d4af37] rounded-full animate-bounce [animation-delay:200ms]" />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -479,9 +548,9 @@ Cordiali saluti,
           <button
             type="button"
             onClick={handleCopy}
-            disabled={!hasDocument}
-            className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
-              hasDocument
+            disabled={chatStep !== 'generated'}
+          className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
+              chatStep === 'generated'
                 ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
                 : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed'
             }`}
@@ -493,9 +562,9 @@ Cordiali saluti,
           <button
             type="button"
             onClick={handlePreview}
-            disabled={!hasDocument}
+            disabled={chatStep !== 'generated'}
             className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
-              hasDocument
+              chatStep === 'generated'
                 ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
                 : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed'
             }`}
@@ -507,9 +576,9 @@ Cordiali saluti,
           <button
             type="button"
             onClick={handlePrint}
-            disabled={!hasDocument}
+            disabled={chatStep !== 'generated'}
             className={`py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition ${
-              hasDocument
+              chatStep === 'generated'
                 ? 'bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]'
                 : 'bg-[#1e293b]/50 border border-[rgba(212,175,55,0.2)] text-[#64748b] cursor-not-allowed'
             }`}
@@ -518,7 +587,7 @@ Cordiali saluti,
             Print
           </button>
 
-          {hasDocument ? (
+          {chatStep === 'generated' ? (
             <a
               href={`mailto:?body=${encodeURIComponent(draftText ?? '')}`}
               className="py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition bg-[#1e293b] border border-[rgba(212,175,55,0.4)] text-[#d4af37] hover:border-[#d4af37]"
@@ -550,7 +619,7 @@ Cordiali saluti,
       </div>
 
       {/* Salva nel Dashboard */}
-      {hasDocument && (
+      {chatStep === 'generated' && (
         <div className="max-w-2xl mx-auto flex justify-center">
           {user ? (
             <Link
