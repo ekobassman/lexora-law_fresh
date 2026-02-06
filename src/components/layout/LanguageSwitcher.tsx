@@ -7,7 +7,7 @@ import {
 } from '@/contexts/LanguageContext';
 import { ChevronDown } from 'lucide-react';
 
-/** Selettore lingua: bandiera + codice (DE, IT, ecc.) con freccia dropdown */
+/** Selettore lingua: bandiera singola + codice (IT, DE, ecc.) + freccia dropdown */
 export function LanguageSwitcher() {
   const { language, setLanguage } = useLanguageContext();
   const [open, setOpen] = useState(false);
@@ -30,13 +30,15 @@ export function LanguageSwitcher() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 text-white hover:text-[#d4af37] transition text-sm font-medium"
+        className="flex items-center gap-2 text-white hover:text-[#d4af37] transition group"
         aria-label="Cambia lingua"
         aria-expanded={open}
       >
-        <span className="text-lg">{LANGUAGE_FLAGS[language]}</span>
-        <span className="font-medium">{language.toUpperCase()}</span>
-        <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <span className="text-xl" role="img" aria-hidden>
+          {LANGUAGE_FLAGS[language]}
+        </span>
+        <span className="text-sm font-medium uppercase tracking-wide">{language.toUpperCase()}</span>
+        <ChevronDown className="w-4 h-4 text-[#d4af37] group-hover:rotate-180 transition" />
       </button>
 
       {open && (
@@ -59,7 +61,7 @@ export function LanguageSwitcher() {
                 language === lang ? 'text-[#d4af37]' : 'text-white'
               }`}
             >
-              <span>{LANGUAGE_FLAGS[lang]}</span>
+              <span className="text-lg">{LANGUAGE_FLAGS[lang]}</span>
               <span>{LANGUAGE_NAMES[lang]}</span>
             </button>
           ))}

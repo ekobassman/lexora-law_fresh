@@ -15,6 +15,7 @@ function App() {
     <BrowserRouter>
       <div className="flex min-h-screen flex-col">
         <Navbar />
+        <div className="flex-1 pt-20">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
@@ -38,6 +39,7 @@ function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </div>
         <Footer />
         <PWAInstallBanner />
       </div>

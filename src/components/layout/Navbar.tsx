@@ -25,20 +25,20 @@ export function Navbar() {
   }, []);
 
   return (
-    <nav className="bg-[#0f172a] border-b border-[rgba(212,175,55,0.3)] h-16 fixed w-full z-50">
-      <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+    <nav className="bg-[#0f172a] border-b border-[rgba(212,175,55,0.3)] h-20 fixed w-full z-50 top-0">
+      <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         <Logo size="sm" />
 
-        <div className="hidden md:flex md:items-center md:gap-4">
+        <div className="hidden md:flex md:items-center md:gap-6">
           <LanguageSwitcher />
           <div className="relative" ref={userMenuRef}>
             <button
               type="button"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="w-10 h-10 rounded-full border border-[rgba(212,175,55,0.5)] flex items-center justify-center hover:border-[#d4af37] transition"
+              className="w-10 h-10 rounded-full border border-[#d4af37] flex items-center justify-center text-[#d4af37] hover:bg-[#d4af37] hover:text-[#0f172a] transition"
               aria-label="Menu utente"
             >
-              <User className="w-5 h-5 text-[#d4af37]" />
+              <User className="w-5 h-5" />
             </button>
             {userMenuOpen && (
               <div
@@ -107,7 +107,8 @@ export function Navbar() {
         </div>
 
         <button
-          className="md:hidden p-2 rounded-lg hover:bg-navy-800 transition text-[#d4af37]"
+          type="button"
+          className="md:hidden p-2 rounded-lg hover:bg-[#1e293b] transition text-[#d4af37]"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Menu"
         >
@@ -116,7 +117,7 @@ export function Navbar() {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden bg-navy-800 border-t border-[rgba(212,175,55,0.2)] px-4 py-4 space-y-2">
+        <div className="md:hidden bg-[#1e293b] border-t border-[rgba(212,175,55,0.2)] px-4 py-4 space-y-2">
           <LanguageSwitcher />
           {user ? (
             <>
@@ -124,6 +125,7 @@ export function Navbar() {
                 {t('nav.dashboard')}
               </Link>
               <button
+                type="button"
                 className="block py-3 w-full text-left text-white"
                 onClick={async () => {
                   await signOut();
@@ -145,7 +147,11 @@ export function Navbar() {
               <Link to="/auth" className="block py-3 text-white" onClick={() => setMobileOpen(false)}>
                 {t('nav.login')}
               </Link>
-              <Link to="/auth?mode=signup" className="block py-3 font-medium text-[#d4af37]" onClick={() => setMobileOpen(false)}>
+              <Link
+                to="/auth?mode=signup"
+                className="block py-3 font-medium text-[#d4af37]"
+                onClick={() => setMobileOpen(false)}
+              >
                 {t('nav.signup')}
               </Link>
             </>

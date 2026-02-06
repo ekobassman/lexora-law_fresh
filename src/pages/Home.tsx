@@ -4,9 +4,9 @@ import { Scale, Smartphone, Globe, Sparkles, Clock, ArrowUpRight } from 'lucide-
 
 export function Home() {
   return (
-    <main className="min-h-screen pt-16">
+    <main className="min-h-screen">
       {/* HERO - Sfondo chiaro */}
-      <section className="bg-[#f5f5f0] pt-24 pb-16 px-4 text-center">
+      <section className="bg-[#f5f5f0] pt-16 pb-16 px-4 text-center">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-wrap justify-center gap-3 mb-8">
             <span className="inline-flex items-center gap-2 bg-[#1e293b] text-white px-4 py-2 rounded-full text-sm font-medium">
