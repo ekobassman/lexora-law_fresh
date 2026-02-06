@@ -17,7 +17,7 @@ interface AuthContextType {
     email: string,
     password: string,
     name: string
-  ) => Promise<{ error: Error | null }>;
+  ) => Promise<{ error: Error | null; needsConfirmation?: boolean }>;
   signOut: () => Promise<void>;
 }
 
@@ -52,8 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, name: string) => {
-    const redirectUrl = `${window.location.origin}/dashboard`;
-    const { error } = await supabase.auth.signUp({
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -61,7 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: { full_name: name },
       },
     });
-    return { error: error as Error | null };
+    const needsConfirmation = !error && data?.user && !data?.session;
+    return { error: error as Error | null, needsConfirmation };
   };
 
   const signOut = async () => {

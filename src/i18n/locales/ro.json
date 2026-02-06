@@ -203,6 +203,6 @@
     "disclaimer_text": "Lexora este un asistent bazat pe IA și nu oferă sfaturi juridice. Conținutul generat este doar informativ. Pentru decizii juridic obligatorii, consultați un avocat calificat."
   },
   "nav": {"home": "Acasă", "dashboard": "Panou", "howItWorks": "Cum funcționează", "logout": "Deconectare"},
-  "auth": {"login": "Autentificare", "signup": "Înregistrare", "email": "E-mail", "password": "Parolă", "name": "Nume"},
+  "auth": {"login": "Autentificare", "signup": "Înregistrare", "email": "E-mail", "password": "Parolă", "name": "Nume", "error_load_failed": "Conexiune eșuată. Verificați conexiunea la internet și config Supabase (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) pe Vercel.", "confirm_email_message": "Înregistrare reușită. Verificați e-mailul și confirmați contul."},
   "common": {"close": "Închide", "cancel": "Anulează", "save": "Salvează", "loading": "Se încarcă..."}
 }

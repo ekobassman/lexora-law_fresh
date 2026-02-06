@@ -203,6 +203,6 @@
     "disclaimer_text": "Lexora è un assistente basato su IA e non fornisce consulenza legale. I contenuti generati sono solo a scopo informativo. Per decisioni legalmente vincolanti, consulta un avvocato qualificato."
   },
   "nav": {"home": "Home", "dashboard": "Dashboard", "howItWorks": "Come funziona", "logout": "Esci"},
-  "auth": {"login": "Accedi", "signup": "Registrati", "email": "Email", "password": "Password", "name": "Nome"},
+  "auth": {"login": "Accedi", "signup": "Registrati", "email": "Email", "password": "Password", "name": "Nome", "error_load_failed": "Connessione fallita. Verifica la connessione internet e che la config Supabase (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) sia corretta su Vercel.", "confirm_email_message": "Registrazione completata. Controlla la tua email e conferma il tuo account."},
   "common": {"close": "Chiudi", "cancel": "Annulla", "save": "Salva", "loading": "Caricamento..."}
 }

@@ -203,6 +203,6 @@
     "disclaimer_text": "A Lexora é um assistente baseado em IA e não fornece aconselhamento jurídico. O conteúdo gerado é apenas informativo. Para decisões legalmente vinculativas, consulte um advogado qualificado."
   },
   "nav": {"home": "Início", "dashboard": "Painel", "howItWorks": "Como funciona", "logout": "Sair"},
-  "auth": {"login": "Entrar", "signup": "Registar", "email": "E-mail", "password": "Palavra-passe", "name": "Nome"},
+  "auth": {"login": "Entrar", "signup": "Registar", "email": "E-mail", "password": "Palavra-passe", "name": "Nome", "error_load_failed": "Falha na ligação. Verifique a ligação à internet e se a config Supabase (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) está correta no Vercel.", "confirm_email_message": "Registo concluído. Verifique o seu e-mail e confirme a sua conta."},
   "common": {"close": "Fechar", "cancel": "Cancelar", "save": "Guardar", "loading": "A carregar..."}
 }

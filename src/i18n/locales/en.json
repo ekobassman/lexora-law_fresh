@@ -227,7 +227,9 @@
     "signup": "Sign up",
     "email": "Email",
     "password": "Password",
-    "name": "Name"
+    "name": "Name",
+    "error_load_failed": "Connection failed. Please check your internet connection and that Supabase config (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) is set correctly on Vercel.",
+    "confirm_email_message": "Registration successful. Please check your email and confirm your account."
   },
   "common": {
     "close": "Close",

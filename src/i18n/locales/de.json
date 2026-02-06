@@ -227,7 +227,9 @@
     "signup": "Registrieren",
     "email": "E-Mail",
     "password": "Passwort",
-    "name": "Name"
+    "name": "Name",
+    "error_load_failed": "Verbindung fehlgeschlagen. Bitte prüfen Sie die Internetverbindung und ob die Supabase-Konfiguration (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) auf Vercel korrekt ist.",
+    "confirm_email_message": "Registrierung erfolgreich. Bitte prüfen Sie Ihre E-Mail und bestätigen Sie Ihren Account."
   },
   "common": {
     "close": "Schließen",

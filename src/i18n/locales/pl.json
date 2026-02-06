@@ -203,6 +203,6 @@
     "disclaimer_text": "Lexora to asystent oparty na AI i nie świadczy porad prawnych. Generowana treść ma wyłącznie charakter informacyjny. W sprawach wiążących prawnie skonsultuj się z wykwalifikowanym prawnikiem."
   },
   "nav": {"home": "Strona główna", "dashboard": "Panel", "howItWorks": "Jak to działa", "logout": "Wyloguj"},
-  "auth": {"login": "Zaloguj się", "signup": "Zarejestruj się", "email": "E-mail", "password": "Hasło", "name": "Imię"},
+  "auth": {"login": "Zaloguj się", "signup": "Zarejestruj się", "email": "E-mail", "password": "Hasło", "name": "Imię", "error_load_failed": "Połączenie nie powiodło się. Sprawdź połączenie internetowe i konfigurację Supabase (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) w Vercel.", "confirm_email_message": "Rejestracja zakończona. Sprawdź e-mail i potwierdź konto."},
   "common": {"close": "Zamknij", "cancel": "Anuluj", "save": "Zapisz", "loading": "Ładowanie..."}
 }

@@ -11,6 +11,7 @@ export function AuthForms() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const { t } = useLanguageContext();
@@ -18,18 +19,33 @@ export function AuthForms() {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
 
+  const getErrorMessage = (err: Error): string => {
+    const msg = err.message?.toLowerCase() ?? '';
+    if (
+      msg.includes('load failed') ||
+      msg.includes('failed to fetch') ||
+      msg.includes('fetch failed') ||
+      msg.includes('networkerror')
+    ) {
+      return t('auth.error_load_failed');
+    }
+    return err.message;
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
     try {
       if (mode === 'signup') {
-        const { error: err } = await signUp(email, password, name);
-        if (err) setError(err.message);
+        const { error: err, needsConfirmation } = await signUp(email, password, name);
+        if (err) setError(getErrorMessage(err));
+        else if (needsConfirmation) setSuccess(t('auth.confirm_email_message'));
         else navigate('/dashboard');
       } else {
         const { error: err } = await signIn(email, password);
-        if (err) setError(err.message);
+        if (err) setError(getErrorMessage(err));
         else navigate('/dashboard');
       }
     } finally {
@@ -76,6 +92,7 @@ export function AuthForms() {
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
+          {success && <p className="text-sm text-green-500">{success}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? '...' : mode === 'signup' ? t('auth.signup') : t('auth.login')}
           </Button>
