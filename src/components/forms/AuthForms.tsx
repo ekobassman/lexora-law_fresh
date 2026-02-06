@@ -72,7 +72,7 @@ export function AuthForms() {
         setMessage(getErrorMessage(error));
       } else if (needsConfirmation) {
         setMessageType('success');
-        setMessage(t('auth.confirm_email_message'));
+        setMessage(t('auth.checkEmail'));
       } else {
         navigate('/dashboard');
       }
@@ -95,7 +95,7 @@ export function AuthForms() {
         setMessage(error.message);
       } else {
         setMessageType('success');
-        setMessage(t('auth.resetEmailSent'));
+        setMessage(t('auth.resetSent'));
       }
     } finally {
       setLoading(false);
@@ -116,7 +116,7 @@ export function AuthForms() {
           <span className="text-4xl text-[#d4af37] font-display font-bold">L</span>
         </div>
         <h1 className="text-4xl font-display text-white tracking-wider mb-2">LEXORA</h1>
-        <p className="text-gray-400 text-lg">{t('auth.privateAccess')}</p>
+        <p className="text-gray-400 text-lg">{t('auth.subtitleLogin')}</p>
       </div>
 
       {/* Main card */}
@@ -227,7 +227,7 @@ export function AuthForms() {
                 disabled={loading}
                 className="w-full bg-[#d4af37] text-[#0f172a] font-bold py-4 rounded-lg hover:bg-[#b8941d] transition-colors disabled:opacity-50"
               >
-                {loading ? t('auth.loading') : t('auth.login')}
+                {loading ? t('auth.loading') : t('auth.loginButton')}
               </button>
             </form>
           )}
@@ -297,7 +297,7 @@ export function AuthForms() {
                 disabled={loading}
                 className="w-full bg-[#d4af37] text-[#0f172a] font-bold py-4 rounded-lg hover:bg-[#b8941d] transition-colors disabled:opacity-50"
               >
-                {loading ? t('auth.loading') : t('auth.signup')}
+                {loading ? t('auth.loading') : t('auth.signupButton')}
               </button>
             </form>
           )}
@@ -306,9 +306,9 @@ export function AuthForms() {
             <form onSubmit={handleForgot} className="space-y-6">
               <div className="text-center mb-6">
                 <h3 className="text-xl font-display text-[#0f172a] mb-2">
-                  {t('auth.resetTitle')}
+                  {t('auth.titleForgot')}
                 </h3>
-                <p className="text-gray-600 text-sm">{t('auth.resetDesc')}</p>
+                <p className="text-gray-600 text-sm">{t('auth.subtitleForgot')}</p>
               </div>
 
               <div>
@@ -333,7 +333,7 @@ export function AuthForms() {
                 disabled={loading}
                 className="w-full bg-[#d4af37] text-[#0f172a] font-bold py-4 rounded-lg hover:bg-[#b8941d] transition-colors disabled:opacity-50"
               >
-                {loading ? t('auth.loading') : t('auth.sendReset')}
+                {loading ? t('auth.loading') : t('auth.resetButton')}
               </button>
 
               <button

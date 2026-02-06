@@ -34,7 +34,7 @@ export function AuthResetPassword() {
     return (
       <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center px-4">
         <div className="w-full max-w-md bg-[#faf9f7] rounded-2xl shadow-2xl p-8 border border-[#d4af37]/20 text-center">
-          <p className="text-[#0f172a] font-medium">{t('auth.resetSuccess')}</p>
+          <p className="text-[#0f172a] font-medium">{t('auth.passwordUpdated')}</p>
           <p className="text-gray-600 text-sm mt-2">{t('auth.redirecting')}</p>
         </div>
       </div>
@@ -56,7 +56,7 @@ export function AuthResetPassword() {
 
       <div className="w-full max-w-md bg-[#faf9f7] rounded-2xl shadow-2xl p-8 relative z-10 border border-[#d4af37]/20">
         <h2 className="text-xl font-display text-[#0f172a] mb-4 text-center">
-          {t('auth.setNewPassword')}
+          {t('auth.titleForgot')}
         </h2>
 
         {message && (
@@ -68,7 +68,7 @@ export function AuthResetPassword() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-[#0f172a] mb-2">
-              {t('auth.password')}
+              {t('auth.newPassword')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -77,7 +77,7 @@ export function AuthResetPassword() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20 bg-white"
-                placeholder="••••••••"
+                placeholder={t('auth.newPasswordPlaceholder')}
                 required
                 minLength={6}
               />
