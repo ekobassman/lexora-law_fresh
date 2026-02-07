@@ -7,9 +7,12 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { PWAInstallBanner } from '@/components/layout/PWAInstallBanner';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import { DashboardShellLayout } from '@/components/dashboard/DashboardShellLayout';
+import { DashboardHome } from '@/components/dashboard/DashboardHome';
+import { DashboardExplain } from '@/components/dashboard/DashboardExplain';
 import { Home } from '@/pages/Home';
-import { Dashboard } from '@/pages/Dashboard';
 import { DashboardNew } from '@/pages/DashboardNew';
+import { DashboardSettings } from '@/pages/DashboardSettings';
 import { AuthPage } from '@/pages/Auth';
 import { AuthCallback } from '@/pages/AuthCallback';
 import { ResetPassword } from '@/pages/Auth/ResetPassword';
@@ -34,7 +37,7 @@ const wrongProject =
 
 function AppContent() {
   const location = useLocation();
-  const isDashboardNew = location.pathname === '/dashboard/new';
+  const isDashboardArea = location.pathname.startsWith('/dashboard');
   return (
     <div className="flex min-h-screen flex-col bg-[#0f172a]">
       {wrongProject && (
@@ -47,8 +50,8 @@ function AppContent() {
           https://{EXPECTED_SUPABASE_PROJECT_REF}.supabase.co
         </div>
       )}
-      {!isDashboardNew && <Navbar />}
-      <div className={isDashboardNew ? 'flex-1' : 'flex-1 pt-20'}>
+      {!isDashboardArea && <Navbar />}
+      <div className={isDashboardArea ? 'flex-1' : 'flex-1 pt-20'}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<AuthPage />} />
@@ -70,18 +73,15 @@ function AppContent() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <DashboardShellLayout />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/dashboard/new"
-            element={
-              <ProtectedRoute>
-                <DashboardNew />
-              </ProtectedRoute>
-            }
-          />
+          >
+            <Route index element={<DashboardHome />} />
+            <Route path="new" element={<DashboardNew />} />
+            <Route path="explain" element={<DashboardExplain />} />
+            <Route path="settings" element={<DashboardSettings />} />
+          </Route>
           <Route
             path="/cases/:id"
             element={
@@ -93,7 +93,7 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
-      {!isDashboardNew && <Footer />}
+      {!isDashboardArea && <Footer />}
       <PWAInstallBanner />
     </div>
   );

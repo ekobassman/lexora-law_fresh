@@ -4,16 +4,21 @@
 /* LEXORA Premium Brand System - Pixel-perfect sync from main */
 
 :root {
-  /* Design system - exact hex values */
+  /* Design system - exact hex values (reference dashboard) */
   --gold-primary: #d4af37;
   --gold-hover: #b8941d;
   --navy-dark: #0f172a;
+  --navy-header: #0c182b;
   --navy-medium: #1e293b;
   --beige-cream: #f5f5f0;
+  --beige-content: #f5f2ee;
+  --beige-card: #f8f7f4;
   --beige-chat: #f5f0e6;
   --white: #ffffff;
-  --gray-body: #4b5563;
-  --gray-muted: #9ca3af;
+  --gray-body: #2c3540;
+  --gray-muted: #787d85;
+  --gray-icon: #8f9ba8;
+  --border-dashed: #d3d3d3;
 
   /* Light theme - main content */
   --background: 36 27% 97%;
