@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "ocr:setup": "powershell -ExecutionPolicy Bypass -File scripts/set-ocr-secret.ps1",
-    "ocr:test": "node scripts/test-process-ocr.js"
+    "ocr:test": "node scripts/test-process-ocr.js",
+    "storage:ensure": "node scripts/ensure-storage-bucket.js"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^5.6.0",

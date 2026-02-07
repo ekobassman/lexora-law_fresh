@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, STORAGE_BUCKET } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardDocuments } from '@/hooks/useDashboardDocuments';
 import { Camera, Upload, ChevronDown, User } from 'lucide-react';
@@ -61,13 +61,12 @@ export function DashboardNew() {
     async (file: File) => {
       if (!user?.id) return;
       const isImage = /^image\/(jpeg|jpg|png|webp)$/i.test(file.type);
-      const BUCKET = 'documents';
       const path = `${user.id}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 
       setUploading(true);
       try {
         const { error: uploadErr } = await supabase.storage
-          .from(BUCKET)
+          .from(STORAGE_BUCKET)
           .upload(path, file, { upsert: false });
         if (uploadErr) throw uploadErr;
 
@@ -75,7 +74,7 @@ export function DashboardNew() {
           .from('documents')
           .insert({
             user_id: user.id,
-            bucket: BUCKET,
+            bucket: STORAGE_BUCKET,
             path,
             file_name: file.name,
             mime_type: file.type,

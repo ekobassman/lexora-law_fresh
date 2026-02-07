@@ -28,8 +28,13 @@ supabase db push
 
 ## Storage buckets
 
-Dopo la migration, crea il bucket per i documenti:
+Dopo le migrations, crea il bucket (se non esiste) e applica le policy:
 
-1. **Storage** → **New bucket**
-2. Nome: `documents`
-3. Pubblico: No (RLS via policies)
+1. **Policy SQL**: la migration `004_storage_policies_documents.sql` (con `supabase db push`) crea le RLS policy per il bucket `documents` (INSERT/SELECT/DELETE per utenti autenticati sui propri file).
+2. **Creazione bucket**: dalla root del progetto, con `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` impostati:
+   ```bash
+   npm run storage:ensure
+   ```
+   Crea il bucket `documents` (privato, 20MB, image/* e application/pdf) se non esiste.
+
+Oppure manualmente: **Storage** → **New bucket** → Nome `documents`, Pubblico: No.
