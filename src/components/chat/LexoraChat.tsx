@@ -178,8 +178,10 @@ function DashboardChatInner({
       msgs: LexoraChatMessage[]
     ): Promise<LexoraChatResponse & { assistant_message?: string }> => {
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) throw new Error('Unauthorized');
+      if (!session?.access_token) {
+        setSessionExpired(true);
+        throw new Error('Unauthorized');
+      }
 
       const activeDoc =
         documentId && user
@@ -199,43 +201,33 @@ function DashboardChatInner({
         };
       }
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dashboard-chat`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
+      // Use Supabase client (same as process-ocr) so URL and auth are correct
+      const { data, error } = await supabase.functions.invoke('dashboard-chat', {
+        body,
+      });
+
+      if (error) {
+        if (error.message?.includes('401') || error.message?.toLowerCase().includes('jwt')) {
+          setSessionExpired(true);
         }
-      );
-      let data: Record<string, unknown>;
-      try {
-        data = await res.json();
-      } catch {
-        data = { ok: false, error: 'Invalid response' };
+        throw new Error(error.message ?? 'Chat error');
       }
 
-      if (res.status === 401) {
-        setSessionExpired(true);
-        throw new Error('Invalid JWT');
+      if (data && typeof data === 'object' && (data as { ok?: boolean }).ok === false) {
+        const errMsg = (data as { error?: string }).error ?? 'Chat error';
+        throw new Error(errMsg);
       }
-      // Prefer 200 with ok: true and message/assistant_message (like demo always gets a reply)
-      if (res.ok) {
-        const msg =
-          (data?.message as string) ??
-          (data?.assistant_message as string) ??
-          '';
-        return {
-          ok: true,
-          message: msg,
-          assistant_message: msg,
-          ...data,
-        } as LexoraChatResponse & { assistant_message?: string };
-      }
-      // Non-200: throw so caller can show fallback (same UX as demo: suggest Scan/Upload)
-      throw new Error((data?.error as string) ?? 'Chat error');
+
+      const msg =
+        (data?.message as string) ??
+        (data?.assistant_message as string) ??
+        '';
+      return {
+        ok: true,
+        message: msg,
+        assistant_message: msg,
+        ...(data as object),
+      } as LexoraChatResponse & { assistant_message?: string };
     },
     [documentId, caseId, user, fetchFull]
   );
