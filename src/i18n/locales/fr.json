@@ -200,7 +200,7 @@
     "support": "Support",
     "help": "Centre d'aide",
     "email": "support@lexora-law.com",
-    "copyright": "© 2026 Lexora",
+    "copyright": "© 2026 Lexora", "allRights": "Tous droits réservés.",
     "disclaimer_text": "Lexora est un assistant basé sur l'IA et ne fournit pas de conseils juridiques. Le contenu généré est à titre informatif uniquement. Pour les décisions juridiquement contraignantes, consultez un avocat qualifié."
   },
   "nav": {"home": "Accueil", "dashboard": "Tableau de bord", "howItWorks": "Comment ça marche", "logout": "Déconnexion"},

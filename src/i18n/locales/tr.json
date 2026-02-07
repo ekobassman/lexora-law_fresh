@@ -200,7 +200,7 @@
     "support": "Destek",
     "help": "Yardım merkezi",
     "email": "support@lexora-law.com",
-    "copyright": "© 2026 Lexora",
+    "copyright": "© 2026 Lexora", "allRights": "Tüm hakları saklıdır.",
     "disclaimer_text": "Lexora yapay zeka tabanlı bir asistan olup hukuki tavsiye vermez. Oluşturulan içerik yalnızca bilgilendirme amaçlıdır. Yasal olarak bağlayıcı kararlar için lütfen nitelikli bir avukata danışın."
   },
   "nav": {"home": "Ana sayfa", "dashboard": "Kontrol paneli", "howItWorks": "Nasıl çalışır", "logout": "Çıkış"},

@@ -200,7 +200,7 @@
     "support": "Ondersteuning",
     "help": "Helpcentrum",
     "email": "support@lexora-law.com",
-    "copyright": "© 2026 Lexora",
+    "copyright": "© 2026 Lexora", "allRights": "Alle rechten voorbehouden.",
     "disclaimer_text": "Lexora is een AI-gebaseerde assistent en biedt geen juridisch advies. De gegenereerde inhoud is alleen voor informatieve doeleinden. Voor juridisch bindende beslissingen raadpleeg een gekwalificeerde advocaat."
   },
   "nav": {"home": "Home", "dashboard": "Dashboard", "howItWorks": "Hoe het werkt", "logout": "Uitloggen"},
