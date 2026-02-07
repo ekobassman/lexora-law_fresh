@@ -28,7 +28,7 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { mode, documentId, caseId, messages, context, hasDocument } = body;
+    const { mode, documentId, caseId, messages, context } = body;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -131,9 +131,15 @@ serve(async (req) => {
     );
   } catch (err) {
     console.error('dashboard-chat error:', err);
+    // Return 200 with friendly message so frontend never shows generic "Chat error"
     return new Response(
-      JSON.stringify({ ok: false, error: String(err) }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({
+        ok: true,
+        message: 'Al momento non posso rispondere. Riprova tra poco o usa Scan/Upload per analizzare un documento.',
+        assistant_message: 'Al momento non posso rispondere. Riprova tra poco o usa Scan/Upload per analizzare un documento.',
+        suggested_draft: null,
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   }
 });

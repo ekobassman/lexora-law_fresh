@@ -326,6 +326,7 @@
     "modalExportPdf": "PDF DIN 5008 exportieren",
     "modalPrint": "Drucken",
     "chatError": "Fehler beim Senden. Bitte erneut versuchen.",
+    "chatFallback": "Ich kann gerade nicht antworten. Nutze die Schaltflächen Scan oder Upload unten, um ein Dokument zu analysieren (wie in der Demo), oder versuche es später erneut.",
     "chatRegenError": "Fehler bei der Regenerierung. Bitte erneut versuchen.",
     "draftApplied": "Entwurf angewendet",
     "draftSaved": "Entwurf gespeichert",

@@ -326,6 +326,7 @@
     "modalExportPdf": "Export PDF DIN 5008",
     "modalPrint": "Print",
     "chatError": "Error sending. Please try again.",
+    "chatFallback": "I can't reply to your message right now. Use the Scan or Upload buttons below to analyze a document (like on the demo), or try again later.",
     "chatRegenError": "Error during regeneration. Please try again.",
     "draftApplied": "Draft applied",
     "draftSaved": "Draft saved",

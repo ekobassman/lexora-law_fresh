@@ -163,7 +163,9 @@ function DashboardChatInner({
     if (messages.length > 0) {
       try {
         localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
-      } catch {}
+      } catch (_) {
+        // ignore storage errors
+      }
     }
   }, [messages]);
 
@@ -208,16 +210,32 @@ function DashboardChatInner({
           body: JSON.stringify(body),
         }
       );
-      const data = await res.json();
+      let data: Record<string, unknown>;
+      try {
+        data = await res.json();
+      } catch {
+        data = { ok: false, error: 'Invalid response' };
+      }
 
       if (res.status === 401) {
         setSessionExpired(true);
         throw new Error('Invalid JWT');
       }
-      if (!res.ok) {
-        throw new Error(data?.error ?? 'Chat error');
+      // Prefer 200 with ok: true and message/assistant_message (like demo always gets a reply)
+      if (res.ok) {
+        const msg =
+          (data?.message as string) ??
+          (data?.assistant_message as string) ??
+          '';
+        return {
+          ok: true,
+          message: msg,
+          assistant_message: msg,
+          ...data,
+        } as LexoraChatResponse & { assistant_message?: string };
       }
-      return data as LexoraChatResponse & { assistant_message?: string };
+      // Non-200: throw so caller can show fallback (same UX as demo: suggest Scan/Upload)
+      throw new Error((data?.error as string) ?? 'Chat error');
     },
     [documentId, caseId, user, fetchFull]
   );
@@ -243,13 +261,24 @@ function DashboardChatInner({
         if (
           err?.message?.includes('401') ||
           err?.message?.toLowerCase().includes('jwt')
-        )
+        ) {
           setSessionExpired(true);
-        else setToast(err?.message ?? t('dashboard.chatError'));
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: t('dashboard.chatError') },
-        ]);
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', content: t('dashboard.chatError') },
+          ]);
+        } else {
+          setToast(err?.message ?? t('dashboard.chatError'));
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content:
+                t('dashboard.chatFallback') ??
+                'Al momento non posso rispondere. Usa Scan o Upload qui sotto per analizzare un documento (come nella demo), oppure riprova.',
+            },
+          ]);
+        }
       })
       .finally(() => setLoading(false));
   }, [stateMessage, user, callDashboardChatApi, t]);
@@ -276,13 +305,25 @@ function DashboardChatInner({
         msg.includes('401') ||
         msg.toLowerCase().includes('jwt') ||
         msg.toLowerCase().includes('unauthorized')
-      )
+      ) {
         setSessionExpired(true);
-      else setToast(msg);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: t('dashboard.chatError') },
-      ]);
+        setMessages((prev) => [
+          ...prev,
+          { role: 'assistant', content: t('dashboard.chatError') },
+        ]);
+      } else {
+        setToast(msg);
+        // Fallback come nella demo: invita a usare Scan/Upload
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content:
+              t('dashboard.chatFallback') ??
+              'Al momento non posso rispondere al messaggio. Usa i pulsanti Scan o Upload qui sotto per caricare un documento e analizzarlo (come nella demo), oppure riprova tra poco.',
+          },
+        ]);
+      }
     } finally {
       setLoading(false);
     }
