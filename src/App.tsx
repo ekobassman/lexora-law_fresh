@@ -16,6 +16,7 @@ import { Terms } from './pages/legal/Terms';
 import { Privacy } from './pages/legal/Privacy';
 import { Disclaimer } from './pages/legal/Disclaimer';
 import { Imprint } from './pages/legal/Imprint';
+import { About } from './pages/About';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/disclaimer" element={<Disclaimer />} />
           <Route path="/imprint" element={<Imprint />} />
+          <Route path="/about" element={<About />} />
           <Route
             path="/dashboard"
             element={

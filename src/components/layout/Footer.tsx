@@ -15,7 +15,7 @@ export function Footer() {
           <ul className="space-y-4">
             <li>
               <Link to="/#how-it-works" className="text-gray-400 hover:text-[#d4af37] transition-colors">
-                {t('footer.how_it_works')}
+                {t('footer.howItWorks')}
               </Link>
             </li>
             <li>
@@ -25,7 +25,7 @@ export function Footer() {
             </li>
             <li>
               <Link to="/#documents" className="text-gray-400 hover:text-[#d4af37] transition-colors">
-                {t('footer.documents')}
+                {t('footer.supportedDocs')}
               </Link>
             </li>
             <li>
@@ -58,7 +58,7 @@ export function Footer() {
         {/* LEGALE */}
         <div>
           <h3 className="text-white font-bold uppercase tracking-wider text-sm mb-6">
-            {t('footer.legal_title')}
+            {t('footer.legal')}
           </h3>
           <ul className="space-y-4">
             <li>
@@ -92,7 +92,7 @@ export function Footer() {
           <ul className="space-y-4">
             <li>
               <Link to="/help" className="text-gray-400 hover:text-[#d4af37] transition-colors">
-                {t('footer.help')}
+                {t('footer.helpCenter')}
               </Link>
             </li>
             <li>
