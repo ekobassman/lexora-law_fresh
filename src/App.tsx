@@ -1,4 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import {
+  EXPECTED_SUPABASE_PROJECT_REF,
+  SUPABASE_PROJECT_REF,
+} from '@/lib/supabase';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { PWAInstallBanner } from '@/components/layout/PWAInstallBanner';
@@ -22,11 +26,27 @@ import { Contact } from './pages/Contact';
 import { FAQ } from './pages/FAQ';
 import { Help } from './pages/Help';
 
+const isDev = (import.meta as { env?: { DEV?: boolean } }).env?.DEV ?? false;
+const wrongProject =
+  isDev &&
+  SUPABASE_PROJECT_REF &&
+  SUPABASE_PROJECT_REF !== EXPECTED_SUPABASE_PROJECT_REF;
+
 function AppContent() {
   const location = useLocation();
   const isDashboardNew = location.pathname === '/dashboard/new';
   return (
     <div className="flex min-h-screen flex-col bg-[#0f172a]">
+      {wrongProject && (
+        <div
+          className="sticky top-0 z-[100] flex items-center justify-center gap-2 bg-amber-600 px-4 py-2 text-center text-sm font-medium text-white"
+          role="alert"
+        >
+          Wrong Supabase project: {SUPABASE_PROJECT_REF}. Expected:{' '}
+          {EXPECTED_SUPABASE_PROJECT_REF}. Set VITE_SUPABASE_URL to
+          https://{EXPECTED_SUPABASE_PROJECT_REF}.supabase.co
+        </div>
+      )}
       {!isDashboardNew && <Navbar />}
       <div className={isDashboardNew ? 'flex-1' : 'flex-1 pt-20'}>
         <Routes>

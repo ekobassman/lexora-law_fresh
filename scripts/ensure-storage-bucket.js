@@ -12,6 +12,7 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const bucketName = process.env.STORAGE_BUCKET ?? 'documents';
 
+const EXPECTED_PROJECT_REF = 'ttzykwwaruxcstftanae';
 const projectRef = supabaseUrl
   ? new URL(supabaseUrl).hostname.replace(/\.supabase\.co$/, '')
   : 'unknown';
@@ -21,6 +22,11 @@ console.log('[ensure-storage-bucket] supabase project ref:', projectRef);
 
 if (!supabaseUrl || !serviceRoleKey) {
   console.error('[ensure-storage-bucket] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
+}
+
+if (projectRef !== EXPECTED_PROJECT_REF) {
+  console.error('[ensure-storage-bucket] Wrong Supabase project URL configured.');
   process.exit(1);
 }
 
