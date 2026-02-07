@@ -376,7 +376,16 @@
     "10to50Cases": "10–50 Fälle",
     "unlimitedCases": "Unbegrenzte Fälle",
     "perMonth": "/Monat",
-    "lexoraWebsite": "lexora-law.com"
+    "lexoraWebsite": "lexora-law.com",
+    "starterF1": "Basis-Funktionen",
+    "starterF2": "Dokumentenverwaltung",
+    "starterF3": "E-Mail-Support",
+    "proF1": "Priorisierte Bearbeitung",
+    "proF2": "Erweiterte Funktionen",
+    "proF3": "Dokumentenorganisation",
+    "unlimitedF1": "Premium-Support",
+    "unlimitedF2": "Vollständiger Funktionsumfang",
+    "unlimitedF3": "Umfassende Betreuung"
   },
   "dashboardNew": {
     "title": "Neuer Fall oder Upload",
