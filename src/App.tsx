@@ -54,6 +54,8 @@ function AppContent() {
       <div className={isDashboardArea ? 'flex-1' : 'flex-1 pt-20'}>
         <Routes>
           <Route path="/" element={<Home />} />
+          {/* Normalize trailing slash so dashboard index (luxury DashboardHome) always matches */}
+          <Route path="/dashboard/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/auth/forgot" element={<ForgotPassword />} />
           <Route path="/auth/reset" element={<ResetPassword />} />
