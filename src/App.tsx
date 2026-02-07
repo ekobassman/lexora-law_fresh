@@ -34,6 +34,7 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/auth/forgot" element={<ForgotPassword />} />
+          <Route path="/auth/reset" element={<ResetPassword />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/pricing" element={<Pricing />} />

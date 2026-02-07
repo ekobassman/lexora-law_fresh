@@ -254,6 +254,8 @@
     "backToLogin": "Back to login",
     "newPassword": "New Password",
     "newPasswordPlaceholder": "Enter new password",
+    "subtitleReset": "Set a new password for your account",
+    "confirmPasswordPlaceholder": "Confirm new password",
     "updatePassword": "Update Password",
     "passwordUpdated": "Password updated successfully",
     "redirecting": "Redirecting to dashboard...",
