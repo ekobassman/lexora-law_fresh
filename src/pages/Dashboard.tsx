@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useLanguageContext } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import {
   useDashboardDocuments,
   type DashboardDocument,
+  type OcrStatus,
 } from '@/hooks/useDashboardDocuments';
 import { useCases } from '@/hooks/useCases';
 import { Button } from '@/components/ui/Button';
@@ -35,30 +36,15 @@ interface ChatMsg {
 
 type FilterPill = 'all' | 'processing' | 'completed' | 'error';
 
-function formatDate(s: string) {
+function formatDate(s: string, locale: string) {
   try {
-    return new Date(s).toLocaleDateString('it-IT', {
+    return new Date(s).toLocaleDateString(locale, {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
     });
   } catch {
     return s;
-  }
-}
-
-function getStatusLabel(status: string) {
-  switch (status) {
-    case 'completed':
-    case 'done':
-      return 'Completato';
-    case 'processing':
-      return 'In lavorazione';
-    case 'failed':
-    case 'error':
-      return 'Errore';
-    default:
-      return 'In attesa';
   }
 }
 
@@ -77,8 +63,20 @@ function getStatusBadgeClass(status: string) {
   }
 }
 
+function getStatusKey(doc: { ocr_status: OcrStatus }): string {
+  const statusKey =
+    doc.ocr_status === 'done' || doc.ocr_status === 'completed'
+      ? 'dashboard.statusCompleted'
+      : doc.ocr_status === 'processing'
+        ? 'dashboard.statusProcessing'
+        : doc.ocr_status === 'error' || doc.ocr_status === 'failed'
+          ? 'dashboard.statusError'
+          : 'dashboard.statusPending';
+  return statusKey;
+}
+
 export function Dashboard() {
-  const { t } = useTranslation();
+  const { t, language } = useLanguageContext();
   const { user } = useAuth();
   const {
     documents,
@@ -266,7 +264,7 @@ export function Dashboard() {
         ...prev,
         {
           role: 'assistant',
-          content: 'Errore durante l\'invio. Riprova.',
+          content: t('dashboard.chatError'),
         },
       ]);
       setLastSuggestedDraft(null);
@@ -299,7 +297,7 @@ export function Dashboard() {
         ...prev.slice(0, -1),
         {
           role: 'assistant',
-          content: 'Errore durante la rigenerazione. Riprova.',
+          content: t('dashboard.chatRegenError'),
         },
       ]);
       setLastSuggestedDraft(null);
@@ -316,8 +314,8 @@ export function Dashboard() {
     setModalDoc((d) => (d && d.id === activeDoc.id ? { ...d, draft_reply: lastSuggestedDraft } : d));
     setModalDraft(lastSuggestedDraft);
     setLastSuggestedDraft(null);
-    setToast('Bozza applicata');
-  }, [activeDoc, lastSuggestedDraft, saveDraft]);
+    setToast(t('dashboard.draftApplied'));
+  }, [activeDoc, lastSuggestedDraft, saveDraft, t]);
 
   const undoApply = useCallback(() => {
     if (!activeDoc || prevDraftForUndo === null) return;
@@ -347,14 +345,14 @@ export function Dashboard() {
     const ok = await saveDraft(modalDoc.id, modalDraft);
     setSavingModal(false);
     if (ok) {
-      setToast('Bozza salvata');
+      setToast(t('dashboard.draftSaved'));
       setModalDoc((d) => (d ? { ...d, draft_reply: modalDraft } : null));
     }
-  }, [modalDoc, modalDraft, saveDraft]);
+  }, [modalDoc, modalDraft, saveDraft, t]);
 
   const handleExportPdf = useCallback(() => {
     if (!modalDraft.trim()) {
-      setToast('Nessuna bozza da esportare');
+      setToast(t('dashboard.noDraftToExport'));
       return;
     }
     const blob = new Blob([modalDraft], { type: 'text/plain;charset=utf-8' });
@@ -364,8 +362,8 @@ export function Dashboard() {
     a.download = `${modalDoc?.filename ?? 'bozza'}.txt`;
     a.click();
     URL.revokeObjectURL(url);
-    setToast('File esportato (TXT). PDF DIN 5008: in sviluppo.');
-  }, [modalDraft, modalDoc]);
+    setToast(t('dashboard.fileExportedTxt'));
+  }, [modalDraft, modalDoc, t]);
 
   const handlePrint = useCallback(() => {
     const w = window.open('', '_blank');
@@ -450,6 +448,9 @@ export function Dashboard() {
                 updated_at: new Date().toISOString(),
               })
               .eq('id', row.id);
+            if (ocrData.ocr_quality === 'LOW_QUALITY') {
+              setToast(t('dashboard.ocrLowQuality'));
+            }
           } else {
             await supabase
               .from('documents')
@@ -459,30 +460,30 @@ export function Dashboard() {
                 updated_at: new Date().toISOString(),
               })
               .eq('id', row.id);
-            setToast(ocrData?.error ?? 'OCR fallito');
+            setToast(ocrData?.error ?? t('dashboard.ocrFailed'));
           }
         } else {
-          setToast('File caricato. OCR per PDF in arrivo.');
+          setToast(t('dashboard.fileUploadedPdfPending'));
         }
 
         await refetchDocs();
       } catch (err) {
-        setToast(err instanceof Error ? err.message : 'Errore caricamento');
+        setToast(err instanceof Error ? err.message : t('dashboard.uploadError'));
       } finally {
         setUploading(false);
       }
     },
-    [user?.id, refetchDocs]
+    [user?.id, refetchDocs, t]
   );
 
   const handleDelete = useCallback(
     async (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
-      if (!confirm('Eliminare questo documento?')) return;
+      if (!confirm(t('dashboard.documentsDeleteConfirm'))) return;
       const ok = await deleteDocument(id);
       if (ok && activeDoc?.id === id) setActiveDoc(null);
     },
-    [deleteDocument, activeDoc]
+    [deleteDocument, activeDoc, t]
   );
 
   useEffect(() => {
@@ -494,8 +495,8 @@ export function Dashboard() {
     if (search && !d.filename.toLowerCase().includes(search.toLowerCase()))
       return false;
     if (filter === 'processing' && d.ocr_status !== 'processing') return false;
-    if (filter === 'completed' && d.ocr_status !== 'completed') return false;
-    if (filter === 'error' && d.ocr_status !== 'failed') return false;
+    if (filter === 'completed' && (d.ocr_status !== 'completed' && d.ocr_status !== 'done')) return false;
+    if (filter === 'error' && (d.ocr_status !== 'failed' && d.ocr_status !== 'error')) return false;
     return true;
   });
 
@@ -538,9 +539,9 @@ export function Dashboard() {
 
         {/* SECTION 1: Chat */}
         <section className="rounded-xl border-2 border-[#d4af37]/30 bg-[#1e293b] p-4 sm:p-5">
-          <h2 className="text-xl font-serif text-[#d4af37] mb-1">Chat</h2>
+          <h2 className="text-xl font-serif text-[#d4af37] mb-1">{t('dashboard.chat')}</h2>
           <p className="text-gray-400 text-sm mb-4">
-            Chiedi, analizza, genera risposta. I tuoi documenti restano salvati sotto.
+            {t('dashboard.chatSubtitle')}
           </p>
 
           <div
@@ -551,7 +552,7 @@ export function Dashboard() {
           >
             {messages.length === 0 && (
               <p className="text-gray-500 text-sm text-center py-8">
-                Scrivi un messaggio per iniziare.
+                {t('dashboard.chatEmpty')}
               </p>
             )}
             {messages.map((m, i) => (
@@ -595,7 +596,7 @@ export function Dashboard() {
                     sendMessage();
                   }
                 }}
-                placeholder="Scrivi un messaggio..."
+                placeholder={t('dashboard.chatPlaceholder')}
                 disabled={chatLoading}
                 className="flex-1 min-h-[44px] max-h-[140px] rounded-lg border border-[#d4af37]/40 bg-[#0f172a] text-white px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50"
                 rows={2}
@@ -606,7 +607,7 @@ export function Dashboard() {
                 className="shrink-0 bg-[#d4af37] text-[#0f172a] hover:bg-[#b8941d]"
               >
                 <Send className="h-4 w-4 sm:mr-1" />
-                <span className="hidden sm:inline">Invia</span>
+                <span className="hidden sm:inline">{t('dashboard.chatSend')}</span>
               </Button>
               <Button
                 variant="outline"
@@ -621,8 +622,8 @@ export function Dashboard() {
             <div className="flex flex-wrap items-center gap-3 text-xs">
               <span className="text-gray-500">
                 {activeDoc
-                  ? `Modalità documento: ${activeDoc.filename}`
-                  : 'Modalità generale'}
+                  ? `${t('dashboard.chatModeDoc')}: ${activeDoc.filename}`
+                  : t('dashboard.chatModeGeneral')}
               </span>
               {activeDoc && lastSuggestedDraft && (
                 <div className="flex gap-2">
@@ -632,7 +633,7 @@ export function Dashboard() {
                     onClick={applyToDraft}
                     className="bg-[#d4af37] text-[#0f172a] text-xs"
                   >
-                    Applica alla bozza
+                    {t('dashboard.chatApplyDraft')}
                   </Button>
                   {prevDraftForUndo !== null && (
                     <Button
@@ -641,7 +642,7 @@ export function Dashboard() {
                       onClick={undoApply}
                       className="border-[#d4af37]/40 text-[#d4af37] text-xs"
                     >
-                      Annulla applicazione
+                      {t('dashboard.chatUndoApply')}
                     </Button>
                   )}
                 </div>
@@ -652,14 +653,14 @@ export function Dashboard() {
 
         {/* SECTION 2: Documents */}
         <section className="rounded-xl border-2 border-[#d4af37]/30 bg-[#1e293b] p-4 sm:p-5">
-          <h2 className="text-xl font-serif text-[#d4af37] mb-4">I tuoi documenti</h2>
+          <h2 className="text-xl font-serif text-[#d4af37] mb-4">{t('dashboard.documents')}</h2>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
               <input
                 type="text"
-                placeholder="Cerca per nome file..."
+                placeholder={t('dashboard.documentsSearch')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 rounded-lg border border-[#d4af37]/30 bg-[#0f172a] text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50"
@@ -677,7 +678,7 @@ export function Dashboard() {
                       : 'bg-[#0f172a]/50 text-gray-400 hover:text-white'
                   )}
                 >
-                  {p === 'all' ? 'Tutti' : p === 'processing' ? 'In lavorazione' : p === 'completed' ? 'Completati' : 'Errore'}
+                  {p === 'all' ? t('dashboard.documentsFilterAll') : p === 'processing' ? t('dashboard.documentsFilterProcessing') : p === 'completed' ? t('dashboard.documentsFilterCompleted') : t('dashboard.documentsFilterError')}
                 </button>
               ))}
             </div>
@@ -698,12 +699,12 @@ export function Dashboard() {
               ) : (
                 <Upload className="h-4 w-4 sm:mr-2" />
               )}
-              <span className="hidden sm:inline">Carica file</span>
+              <span className="hidden sm:inline">{t('dashboard.documentsUpload')}</span>
             </Button>
           </div>
 
           {docsLoading && (
-            <p className="text-gray-500 text-sm py-8 text-center">Caricamento...</p>
+            <p className="text-gray-500 text-sm py-8 text-center">{t('dashboard.documentsLoading')}</p>
           )}
           {docsError && (
             <p className="text-red-400 text-sm py-4">{docsError}</p>
@@ -711,13 +712,13 @@ export function Dashboard() {
 
           {!docsLoading && filteredDocs.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">Nessun documento salvato ancora.</p>
+              <p className="text-gray-500 mb-4">{t('dashboard.documentsEmpty')}</p>
               <Button
                 onClick={() => fileInputRef.current?.click()}
                 className="bg-[#d4af37] text-[#0f172a] hover:bg-[#b8941d]"
               >
                 <Upload className="h-4 w-4 mr-2" />
-                Carica il primo file
+                {t('dashboard.documentsUploadFirst')}
               </Button>
             </div>
           )}
@@ -738,7 +739,7 @@ export function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white truncate">{doc.filename}</p>
                     <p className="text-xs text-gray-500">
-                      {formatDate(doc.created_at)} • {doc.mime_type?.split('/')[0] ?? 'file'}
+                      {formatDate(doc.created_at, language)} • {doc.mime_type?.split('/')[0] ?? 'file'}
                     </p>
                   </div>
                   <span
@@ -747,7 +748,7 @@ export function Dashboard() {
                       getStatusBadgeClass(doc.ocr_status)
                     )}
                   >
-                    {getStatusLabel(doc.ocr_status)}
+                    {t(getStatusKey(doc))}
                   </span>
                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                     <Button
@@ -757,7 +758,7 @@ export function Dashboard() {
                       className="text-[#d4af37] hover:bg-[#d4af37]/10"
                     >
                       <ExternalLink className="h-4 w-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Apri</span>
+                      <span className="hidden sm:inline">{t('dashboard.documentsOpen')}</span>
                     </Button>
                     <Button
                       variant="outline"
@@ -766,7 +767,7 @@ export function Dashboard() {
                       className="border-red-500/50 text-red-400 hover:bg-red-500/10"
                     >
                       <Trash2 className="h-4 w-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Elimina</span>
+                      <span className="hidden sm:inline">{t('dashboard.documentsDelete')}</span>
                     </Button>
                   </div>
                 </li>
@@ -798,19 +799,19 @@ export function Dashboard() {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {modalDoc.ocr_text && (
                 <div>
-                  <p className="text-xs text-gray-500 mb-2">Testo OCR</p>
+                  <p className="text-xs text-gray-500 mb-2">{t('dashboard.modalOcrText')}</p>
                   <pre className="text-sm text-gray-300 bg-[#0f172a] rounded p-3 overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap">
                     {modalDoc.ocr_text}
                   </pre>
                 </div>
               )}
               <div>
-                <p className="text-xs text-gray-500 mb-2">Bozza risposta</p>
+                <p className="text-xs text-gray-500 mb-2">{t('dashboard.modalDraft')}</p>
                 <textarea
                   value={modalDraft}
                   onChange={(e) => setModalDraft(e.target.value)}
                   className="w-full min-h-[120px] rounded-lg border border-[#d4af37]/30 bg-[#0f172a] text-white p-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50"
-                  placeholder="Inserisci o modifica la bozza..."
+                  placeholder={t('dashboard.modalDraftPlaceholder')}
                 />
               </div>
             </div>
@@ -822,18 +823,18 @@ export function Dashboard() {
                 className="border-[#d4af37]/40 text-[#d4af37]"
               >
                 <Save className="h-4 w-4 mr-2" />
-                Salva bozza
+                {t('dashboard.modalSaveDraft')}
               </Button>
               <Button
                 onClick={handleExportPdf}
                 className="bg-[#d4af37] text-[#0f172a] hover:bg-[#b8941d]"
               >
                 <FileText className="h-4 w-4 mr-2" />
-                Esporta PDF DIN 5008
+                {t('dashboard.modalExportPdf')}
               </Button>
               <Button variant="ghost" onClick={handlePrint} className="text-gray-400">
                 <Printer className="h-4 w-4 mr-2" />
-                Stampa
+                {t('dashboard.modalPrint')}
               </Button>
             </div>
           </div>
@@ -961,7 +962,7 @@ export function Dashboard() {
                   >
                     <span className="font-medium block">{c.title}</span>
                     <span className="text-xs text-gray-500">
-                      {formatDate(c.created_at)}
+                      {formatDate(c.created_at, language)}
                     </span>
                   </button>
                 </li>

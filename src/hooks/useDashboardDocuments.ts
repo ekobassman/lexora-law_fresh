@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 
-export type DocStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type OcrStatus = 'pending' | 'processing' | 'done' | 'error' | 'failed' | 'completed';
 
 export interface DashboardDocument {
   id: string;
   filename: string;
   mime_type: string | null;
-  ocr_status: DocStatus;
+  ocr_status: OcrStatus;
   created_at: string;
   updated_at: string;
   ocr_text?: string | null;
@@ -17,10 +17,12 @@ export interface DashboardDocument {
   storage_path?: string;
 }
 
-function mapStatus(s: string): DocStatus {
-  if (s === 'done') return 'completed';
-  if (s === 'error') return 'failed';
-  return s as DocStatus;
+function mapStatus(s: string): OcrStatus {
+  const raw = (s ?? 'pending').toLowerCase();
+  if (raw !== 'pending' && raw !== 'processing' && raw !== 'done' && raw !== 'error' && raw !== 'failed' && raw !== 'completed') {
+    return 'pending';
+  }
+  return raw as OcrStatus;
 }
 
 export function useDashboardDocuments() {
@@ -33,11 +35,17 @@ export function useDashboardDocuments() {
     if (!user?.id) {
       setDocuments([]);
       setLoading(false);
+      setError(null);
       return;
     }
     setLoading(true);
     setError(null);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setDocuments([]);
+        return;
+      }
       const { data, error: err } = await supabase
         .from('documents')
         .select('id, file_name, mime_type, status, created_at, updated_at')
@@ -49,7 +57,7 @@ export function useDashboardDocuments() {
       setDocuments(
         (data ?? []).map((r) => ({
           id: r.id,
-          filename: r.file_name ?? 'Senza nome',
+          filename: r.file_name ?? 'Untitled',
           mime_type: r.mime_type,
           ocr_status: mapStatus(r.status ?? 'pending'),
           created_at: r.created_at,
@@ -57,7 +65,9 @@ export function useDashboardDocuments() {
         }))
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Errore caricamento documenti');
+      const msg = e instanceof Error ? e.message : 'Error';
+      if (import.meta.env.DEV) console.error('[useDashboardDocuments]', e);
+      setError(msg);
       setDocuments([]);
     } finally {
       setLoading(false);

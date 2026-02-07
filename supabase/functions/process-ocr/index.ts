@@ -9,27 +9,19 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 };
 
-const EXTRACT_PROMPT = `Tu sei un OCR di precisione per documenti ufficiali (lettere, avvisi, decreti). Estrai TUTTO il testo presente nell'immagine.
+const EXTRACT_PROMPT = `Transcribe EXACTLY the text visible in the image.
+DO NOT add, guess, or correct anything.
+If a character or word is unclear, replace it with the symbol '□'.
+Preserve line breaks where reasonable.
+Return ONLY a valid JSON object (no markdown, no text before or after) with these exact keys:
+- fullText: ONLY the transcribed text, following the rules above. Do not invent or correct characters.
+- sender: sender/authority (only if clearly visible; otherwise "Non rilevato")
+- recipient: recipient (only if clearly visible; otherwise "Non rilevato")
+- date: document date YYYY-MM-DD (only if clearly visible; otherwise today's date)
+- subject: subject (only if clearly visible; otherwise "Non rilevato")
+- documentType: e.g. Lettera, Avviso, Decreto (only if clearly visible; otherwise "Lettera")
 
-REGOLE CRITICHE - ANALISI COMPLETA:
-1. Leggi OGNI parola, OGNI riga, OGNI carattere. NON troncare, NON omettere, NON riassumere.
-2. fullText DEVE contenere l'intero contenuto del documento, dall'inizio alla fine, senza eccezioni.
-3. Supporta tedesco, italiano, inglese, francese, spagnolo e altre lingue europee.
-4. Mantieni la formattazione originale (paragrafi, interruzioni di riga dove presenti).
-5. Per caratteri poco chiari: usa il contesto per correggere (es. "Finanzamt" non "pinanzamt", "Herrn" non "Herr").
-6. Numeri, date, importi: trascrivi esattamente come appaiono (€, non £).
-7. Umlaut: ä, ö, ü, ß - trascrivi correttamente.
-8. Nomi propri e indirizzi: trascrivi con la massima accuratezza.
-
-Estrai e ritorna un JSON con queste chiavi ESATTE:
-- sender: mittente/emittente (autorità, azienda o persona che invia)
-- recipient: destinatario (a chi è indirizzata la lettera)
-- date: data del documento (formato YYYY-MM-DD se possibile)
-- subject: oggetto/betreff/cause
-- documentType: tipo (Lettera, Avviso, Decreto, etc.)
-- fullText: TUTTO il testo del documento, dall'intestazione alla firma, COMPLETO, SENZA omissioni.
-
-Rispondi SOLO con JSON valido, nessun markdown, nessun testo prima o dopo.`;
+For fullText: transcribe character-by-character what you see. Use □ for any unclear character. Do not guess or correct.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -81,7 +73,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        temperature: 0.0,
+        temperature: 0,
         max_tokens: 8192,
         messages: [
           { role: 'user', content: [
@@ -123,7 +115,14 @@ serve(async (req) => {
       analysis.fullText = content || 'Testo non estrattabile.';
     }
 
-    const draft_text = `[Bozza estratta da documento]\n\nMittente: ${analysis.sender}\nDestinatario: ${analysis.recipient}\nData: ${analysis.date}\nOggetto: ${analysis.subject}\n\n${analysis.fullText || 'Testo da completare.'}`;
+    const fullText = analysis.fullText ?? '';
+    const replacementCount = (fullText.match(/□/g) || []).length;
+    const nonSpaceLength = fullText.replace(/\s/g, '').length || 1;
+    const ocr_quality = replacementCount > 5 || replacementCount / nonSpaceLength > 0.02
+      ? 'LOW_QUALITY'
+      : 'HIGH_QUALITY';
+
+    const draft_text = `[Bozza estratta da documento]\n\nMittente: ${analysis.sender}\nDestinatario: ${analysis.recipient}\nData: ${analysis.date}\nOggetto: ${analysis.subject}\n\n${fullText || 'Testo da completare.'}`;
 
     return new Response(
       JSON.stringify({
@@ -135,6 +134,7 @@ serve(async (req) => {
         recipient: analysis.recipient,
         date: analysis.date,
         subject: analysis.subject,
+        ocr_quality,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );

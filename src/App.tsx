@@ -25,9 +25,8 @@ import { Help } from './pages/Help';
 function AppContent() {
   const location = useLocation();
   const isDashboardNew = location.pathname === '/dashboard/new';
-
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[#0f172a]">
       {!isDashboardNew && <Navbar />}
       <div className={isDashboardNew ? 'flex-1' : 'flex-1 pt-20'}>
         <Routes>

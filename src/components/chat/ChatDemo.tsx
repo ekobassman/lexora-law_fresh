@@ -363,6 +363,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
       let analysis: Record<string, string>;
       let draft_text: string;
       let usedApi = false;
+      let ocrQuality: 'HIGH_QUALITY' | 'LOW_QUALITY' | undefined;
 
       try {
         const { data, error } = await supabase.functions.invoke('process-ocr', {
@@ -386,10 +387,12 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
         };
         draft_text = data.draft_text;
         usedApi = true;
+        ocrQuality = data.ocr_quality ?? 'HIGH_QUALITY';
       } catch {
         const { analysis: tessAnalysis, extractedText } = await runTesseractFallback(file);
         analysis = tessAnalysis;
         draft_text = `[Bozza estratta da documento]\n\nMittente: ${tessAnalysis.sender}\nDestinatario: ${tessAnalysis.recipient}\nData: ${tessAnalysis.date}\nOggetto: ${tessAnalysis.subject}\n\n${extractedText || 'Testo da completare.'}`;
+        ocrQuality = undefined;
       }
 
       saveToPreview(draft_text);
@@ -406,6 +409,9 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
       setChatStep('collecting');
       setCollectingField('sender');
 
+      const lowQualityNote = ocrQuality === 'LOW_QUALITY'
+        ? '\n\n⚠️ Some text could not be read clearly (□). Please check the transcription.'
+        : '';
       const fullText = analysis.fullText ?? draft_text ?? '';
       setMessages((prev) => [
         ...prev,
@@ -413,7 +419,7 @@ Tutto corretto? Rispondi "Sì" per generare il documento.`;
           type: 'ai',
           text: '',
           ocrContent: fullText,
-          ocrSummary: `Documento analizzato${usedApi ? ' (GPT-4o Vision)' : ''}!\n\nDATI ESTRATTI:\n• Mittente: ${analysis.sender || 'Non rilevato'}\n• Destinatario: ${analysis.recipient || 'Non rilevato'}\n• Data: ${analysis.date}\n• Oggetto: ${analysis.subject || 'Non rilevato'}\n\nPuoi usare Copy, Preview o Print subito. Vuoi preparare una risposta? Scrivi SI per usare questi dati, oppure NO per inserirli manualmente.`,
+          ocrSummary: `Documento analizzato${usedApi ? ' (GPT-4o Vision)' : ''}!\n\nDATI ESTRATTI:\n• Mittente: ${analysis.sender || 'Non rilevato'}\n• Destinatario: ${analysis.recipient || 'Non rilevato'}\n• Data: ${analysis.date}\n• Oggetto: ${analysis.subject || 'Non rilevato'}\n\n${lowQualityNote}Puoi usare Copy, Preview o Print subito. Vuoi preparare una risposta? Scrivi SI per usare questi dati, oppure NO per inserirli manualmente.`,
         },
       ]);
     } catch (err) {
