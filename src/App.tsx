@@ -8,9 +8,14 @@ import { Dashboard } from '@/pages/Dashboard';
 import { AuthPage } from '@/pages/Auth';
 import { AuthCallback } from '@/pages/AuthCallback';
 import { ResetPassword } from '@/pages/Auth/ResetPassword';
+import { ForgotPassword } from '@/pages/Auth/ForgotPassword';
 import { Pricing } from '@/pages/Pricing';
 import { CaseDetail } from '@/pages/CaseDetail';
 import { LetterPreview } from '@/pages/LetterPreview';
+import { Terms } from '@/pages/Terms';
+import { Privacy } from '@/pages/Privacy';
+import { Disclaimer } from '@/pages/Disclaimer';
+import { Imprint } from '@/pages/Imprint';
 
 function App() {
   return (
@@ -21,10 +26,15 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/auth/forgot" element={<ForgotPassword />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/letter-preview" element={<LetterPreview />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/disclaimer" element={<Disclaimer />} />
+          <Route path="/imprint" element={<Imprint />} />
           <Route
             path="/dashboard"
             element={
