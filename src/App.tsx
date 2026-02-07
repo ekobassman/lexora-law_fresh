@@ -12,10 +12,10 @@ import { ForgotPassword } from '@/pages/Auth/ForgotPassword';
 import { Pricing } from '@/pages/Pricing';
 import { CaseDetail } from '@/pages/CaseDetail';
 import { LetterPreview } from '@/pages/LetterPreview';
-import { Terms } from '@/pages/Terms';
-import { Privacy } from '@/pages/Privacy';
-import { Disclaimer } from '@/pages/Disclaimer';
-import { Imprint } from '@/pages/Imprint';
+import { Terms } from '@/pages/legal/Terms';
+import { Privacy } from '@/pages/legal/Privacy';
+import { Disclaimer } from '@/pages/legal/Disclaimer';
+import { Imprint } from '@/pages/legal/Imprint';
 
 function App() {
   return (
