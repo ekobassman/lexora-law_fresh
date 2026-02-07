@@ -182,6 +182,11 @@
     "contact": "Neem contact op",
     "contact_text": "Nog vragen?"
   },
+  "aboutPage": {
+    "intro": "Lexora is een AI-assistent die je helpt officiële brieven te begrijpen en passende antwoorden op te stellen volgens lokale regelgeving. We richten ons op Duitsland, Oostenrijk, Zwitserland en andere Europese landen.",
+    "mission": "Onze missie is juridische communicatie voor iedereen toegankelijk te maken. Officiële brieven gebruiken vaak complexe taal en strikte termijnen. Lexora analyseert je documenten, legt duidelijk uit wat er vereist is en helpt je correct te reageren.",
+    "values": "Gegevensbeveiliging en privacy hebben voor ons prioriteit. Alle documenten worden verwerkt op EU-servers en we delen je gegevens nooit met derden. Lexora is een ondersteuningstool, geen vervanging voor juridisch advies—voor complexe zaken raden we aan een gekwalificeerde advocaat te raadplegen."
+  },
   "footer": {
     "product": "Product",
     "company": "Bedrijf",

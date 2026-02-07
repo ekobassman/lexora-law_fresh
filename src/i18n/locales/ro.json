@@ -182,6 +182,11 @@
     "contact": "Contactează-ne",
     "contact_text": "Mai ai întrebări?"
   },
+  "aboutPage": {
+    "intro": "Lexora este un asistent bazat pe AI care te ajută să înțelegi scrisorile oficiale și să redactezi răspunsuri adecvate conform reglementărilor locale. Ne concentrăm pe Germania, Austria, Elveția și alte țări europene.",
+    "mission": "Misiunea noastră este să facem comunicarea juridică accesibilă pentru toți. Scrisorile oficiale folosesc adesea limbaj complex și termene stricte. Lexora analizează documentele tale, explică clar ce este cerut și te ajută să răspunzi corect.",
+    "values": "Securitatea și confidențialitatea datelor sunt prioritatea noastră. Toate documentele sunt procesate pe servere din UE și nu partajăm niciodată datele tale cu terți. Lexora este un instrument de suport, nu un înlocuitor al sfatului juridic—pentru probleme complexe recomandăm consultarea unui avocat calificat."
+  },
   "footer": {
     "product": "Produs",
     "company": "Companie",

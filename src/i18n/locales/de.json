@@ -196,6 +196,11 @@
     "contact": "Kontaktieren Sie uns",
     "contact_text": "Noch Fragen?"
   },
+  "aboutPage": {
+    "intro": "Lexora ist ein KI-gestützter Assistent, der Ihnen hilft, amtliche Schreiben zu verstehen und passende Antworten nach geltendem Recht zu erstellen. Wir fokussieren uns auf Deutschland, Österreich, die Schweiz und weitere europäische Länder.",
+    "mission": "Unsere Mission ist es, rechtliche Kommunikation für alle zugänglich zu machen. Amtliche Schreiben verwenden oft komplizierte Sprache und setzen enge Fristen. Lexora analysiert Ihre Dokumente, erklärt verständlich, was gefordert wird, und hilft Ihnen bei der korrekten Antwort.",
+    "values": "Datensicherheit und Datenschutz haben für uns oberste Priorität. Alle Dokumente werden auf EU-Servern verarbeitet und wir geben Ihre Daten nie an Dritte weiter. Lexora ist ein Unterstützungstool, kein Ersatz für Rechtsberatung—bei komplexen Angelegenheiten empfehlen wir die Konsultation eines qualifizierten Anwalts."
+  },
   "footer": {
     "product": "Produkt",
     "company": "Unternehmen",

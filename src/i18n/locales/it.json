@@ -182,6 +182,11 @@
     "contact": "Contattaci",
     "contact_text": "Hai ancora domande?"
   },
+  "aboutPage": {
+    "intro": "Lexora è un assistente basato sull'IA che ti aiuta a comprendere le lettere ufficiali e a redigere risposte appropriate secondo le normative locali. Ci concentriamo su Germania, Austria, Svizzera e altri paesi europei.",
+    "mission": "La nostra missione è rendere accessibile a tutti la comunicazione legale. Le lettere ufficiali usano spesso un linguaggio complesso e scadenze rigide. Lexora analizza i tuoi documenti, spiega in modo chiaro cosa è richiesto e ti aiuta a rispondere correttamente.",
+    "values": "La sicurezza e la privacy dei dati sono la nostra priorità. Tutti i documenti vengono elaborati su server UE e non condividiamo mai i tuoi dati con terze parti. Lexora è uno strumento di supporto, non un sostituto della consulenza legale—per questioni complesse consigliamo di consultare un avvocato qualificato."
+  },
   "footer": {
     "product": "Prodotto",
     "company": "Azienda",

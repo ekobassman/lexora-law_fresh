@@ -12,7 +12,11 @@ export function About() {
         </Link>
       </header>
       <h1 className="text-4xl font-serif text-[#d4af37] mb-4">{t('footer.about')}</h1>
-      <p className="text-gray-300">Contenuto da inserire...</p>
+      <div className="max-w-3xl space-y-6 text-gray-300">
+        <p className="text-lg leading-relaxed">{t('aboutPage.intro')}</p>
+        <p className="leading-relaxed">{t('aboutPage.mission')}</p>
+        <p className="leading-relaxed">{t('aboutPage.values')}</p>
+      </div>
     </div>
   );
 }

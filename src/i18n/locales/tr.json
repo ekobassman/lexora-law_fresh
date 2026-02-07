@@ -182,6 +182,11 @@
     "contact": "Bize ulaşın",
     "contact_text": "Hâlâ sorularınız mı var?"
   },
+  "aboutPage": {
+    "intro": "Lexora, resmi mektupları anlamanıza ve yerel düzenlemelere uygun yanıtlar hazırlamanıza yardımcı olan yapay zeka destekli bir asistandır. Almanya, Avusturya, İsviçre ve diğer Avrupa ülkelerine odaklanıyoruz.",
+    "mission": "Misyonumuz hukuki iletişimi herkes için erişilebilir kılmaktır. Resmi mektuplar sıklıkla karmaşık dil ve sıkı süreler kullanır. Lexora belgelerinizi analiz eder, neyin gerekli olduğunu açıkça açıklar ve doğru yanıt vermenize yardımcı olur.",
+    "values": "Veri güvenliği ve gizlilik önceliğimizdir. Tüm belgeler AB sunucularında işlenir ve verilerinizi asla üçüncü taraflarla paylaşmayız. Lexora bir destek aracıdır, hukuki tavsiye yerine geçmez—karmaşık konularda nitelikli bir avukata danışmanızı öneririz."
+  },
   "footer": {
     "product": "Ürün",
     "company": "Şirket",

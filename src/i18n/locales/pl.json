@@ -182,6 +182,11 @@
     "contact": "Skontaktuj się z nami",
     "contact_text": "Masz jeszcze pytania?"
   },
+  "aboutPage": {
+    "intro": "Lexora to asystent oparty na AI, który pomaga zrozumieć pisma urzędowe i przygotować odpowiednie odpowiedzi zgodnie z lokalnymi przepisami. Skupiamy się na Niemczech, Austrii, Szwajcarii i innych krajach europejskich.",
+    "mission": "Naszą misją jest uczynienie komunikacji prawnej dostępną dla wszystkich. Pisma urzędowe często używają skomplikowanego języka i ścisłych terminów. Lexora analizuje Twoje dokumenty, wyjaśnia jasno, co jest wymagane, i pomaga odpowiedzieć poprawnie.",
+    "values": "Bezpieczeństwo i prywatność danych są naszym priorytetem. Wszystkie dokumenty są przetwarzane na serwerach UE i nigdy nie udostępniamy Twoich danych stronom trzecim. Lexora to narzędzie wspomagające, nie zamiennik porady prawnej—w złożonych sprawach zalecamy konsultację z wykwalifikowanym prawnikiem."
+  },
   "footer": {
     "product": "Produkt",
     "company": "Firma",
