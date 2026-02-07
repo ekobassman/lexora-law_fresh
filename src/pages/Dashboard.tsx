@@ -178,11 +178,7 @@ export function Dashboard() {
     if (!title) return;
     setCreatingCase(true);
     try {
-      const newCase = await createCase(title, undefined, undefined, {
-        authority: newCaseForm.authority.trim() || undefined,
-        aktenzeichen: newCaseForm.reference.trim() || undefined,
-        deadline: newCaseForm.deadline.trim() || undefined,
-      });
+      const newCase = await createCase(title);
       if (newCase) {
         setActiveCaseId(newCase.id);
         setNewCaseModalOpen(false);

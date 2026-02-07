@@ -39,18 +39,28 @@ export function useCases() {
   }, [fetchCases]);
 
   const createCase = useCallback(
-    async (title: string, letterText?: string, draftResponse?: string): Promise<Case | null> => {
+    async (
+      title: string,
+      letterText?: string,
+      draftResponse?: string,
+      extra?: { authority?: string; aktenzeichen?: string; deadline?: string }
+    ): Promise<Case | null> => {
       if (!user?.id) return null;
       try {
+        const payload: Record<string, unknown> = {
+          user_id: user.id,
+          title: title || 'Nuova pratica',
+          letter_text: letterText ?? null,
+          draft_response: draftResponse ?? null,
+          status: 'new',
+        };
+        if (extra?.authority != null) payload.authority = extra.authority;
+        if (extra?.aktenzeichen != null) payload.aktenzeichen = extra.aktenzeichen;
+        if (extra?.deadline != null) payload.deadline = extra.deadline;
+
         const { data, error: err } = await supabase
           .from('cases')
-          .insert({
-            user_id: user.id,
-            title: title || 'Nuova pratica',
-            letter_text: letterText ?? null,
-            draft_response: draftResponse ?? null,
-            status: 'new',
-          })
+          .insert(payload)
           .select()
           .single();
 
