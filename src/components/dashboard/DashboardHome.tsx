@@ -1,5 +1,8 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useLanguageContext } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
+import { useDashboardDocuments } from '@/hooks/useDashboardDocuments';
+import { supabase, STORAGE_BUCKET } from '@/lib/supabase';
 import {
   Lock,
   Mail,
@@ -18,17 +21,19 @@ import {
   Check,
 } from 'lucide-react';
 import { useCases } from '@/hooks/useCases';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 
+/* Original luxury: cream (crema), not yellow. Same frames and sizes. */
 const GOLD = '#d4af37';
-const GOLD_DARK = '#c49c4f';
-const CONTENT_BG = '#f5f2ee';
+const GOLD_DARK = '#b8962e';
+const CONTENT_BG = '#f8f6f0';
 const CARD_BG = '#ffffff';
-const CHAT_CARD_BG = '#ebe0b2';
-const NAV_BG = '#162334';
-const TEXT_DARK = '#333333';
-const TEXT_MUTED = '#555555';
+const CREAM = '#f5f0e6';
+const CREAM_INPUT = '#faf8f5';
+const NAV_BG = '#0c182b';
+const TEXT_DARK = '#3d3629';
+const TEXT_MUTED = '#5c5548';
 
 const cards = [
   { key: 'cardUrgent', icon: Lock, iconColor: '#7dd3fc' },
@@ -55,17 +60,91 @@ const PLANS = [
 export function DashboardHome() {
   const { t } = useLanguageContext();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { cases } = useCases();
+  const { refetch } = useDashboardDocuments();
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
   const [selectOpen, setSelectOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const selectRef = useRef<HTMLDivElement>(null);
   const hasCases = cases.length > 0;
 
+  const doUpload = useCallback(
+    async (file: File) => {
+      if (!user?.id) return;
+      const isImage = /^image\/(jpeg|jpg|png|webp)$/i.test(file.type);
+      const path = `${user.id}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      setUploading(true);
+      try {
+        const { error: uploadErr } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file, { upsert: false });
+        if (uploadErr) throw uploadErr;
+        const { data: row, error: insertErr } = await supabase
+          .from('documents')
+          .insert({ user_id: user.id, bucket: STORAGE_BUCKET, path, file_name: file.name, mime_type: file.type, status: 'processing' })
+          .select('id')
+          .single();
+        if (insertErr) throw insertErr;
+        if (isImage) {
+          const reader = new FileReader();
+          const imageBase64 = await new Promise<string>((res, rej) => {
+            reader.onload = () => { const r = reader.result as string; res(r?.includes(',') ? r.split(',')[1] ?? '' : r ?? ''); };
+            reader.onerror = rej;
+            reader.readAsDataURL(file);
+          });
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData?.session?.access_token;
+          const { data: ocrData, error: ocrErr } = await supabase.functions.invoke('process-ocr', {
+            body: { imageBase64, mimeType: file.type },
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          });
+          if (!ocrErr && ocrData?.ok) {
+            const analysis = ocrData.analysis ?? {};
+            const draft = ocrData.draft_text ?? `[Bozza]\n\n${analysis.fullText ?? ''}`;
+            await supabase.from('documents').update({
+              ocr_text: analysis.fullText ?? ocrData.draft_text ?? '',
+              analysis_json: analysis,
+              draft_reply: draft,
+              status: 'completed',
+              updated_at: new Date().toISOString(),
+            }).eq('id', row.id);
+          } else {
+            await supabase.from('documents').update({
+              status: 'failed',
+              error: ocrData?.error ?? ocrErr?.message ?? 'OCR failed',
+              updated_at: new Date().toISOString(),
+            }).eq('id', row.id);
+          }
+        }
+        await refetch();
+        setToast(t('dashboardNew.uploadSuccess'));
+        setTimeout(() => setToast(null), 2500);
+      } catch (err) {
+        setToast(err instanceof Error ? err.message : 'Upload failed');
+      } finally {
+        setUploading(false);
+      }
+    },
+    [user?.id, refetch, t]
+  );
+
+  const handleCameraChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) doUpload(file);
+  }, [doUpload]);
+
+  const handleUploadChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) doUpload(file);
+  }, [doUpload]);
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (selectRef.current && !selectRef.current.contains(e.target as Node)) {
-        setSelectOpen(false);
-      }
+      if (selectRef.current && !selectRef.current.contains(e.target as Node)) setSelectOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -93,7 +172,7 @@ export function DashboardHome() {
             onClick={() => setSelectOpen(!selectOpen)}
             className="w-full flex items-center justify-between px-4 py-3 rounded-xl border text-left"
             style={{
-              backgroundColor: CHAT_CARD_BG,
+              backgroundColor: CREAM,
               borderColor: GOLD_DARK,
               color: TEXT_DARK,
             }}
@@ -130,37 +209,61 @@ export function DashboardHome() {
           )}
         </div>
 
-        {/* Luxury chat card */}
+        {/* Hidden: Scan → camera, Upload → files/gallery */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleCameraChange}
+          className="hidden"
+          aria-hidden
+        />
+        <input
+          ref={uploadInputRef}
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
+          onChange={handleUploadChange}
+          className="hidden"
+          aria-hidden
+        />
+
+        {/* Luxury chat card - cream background, gold frame, same sizes */}
         <div
-          className="rounded-2xl border-2 p-5 mb-4 shadow-md"
-          style={{ backgroundColor: CHAT_CARD_BG, borderColor: GOLD_DARK }}
+          className="rounded-2xl border-2 p-0 mb-4 overflow-hidden shadow-md"
+          style={{ backgroundColor: CREAM, borderColor: GOLD }}
         >
-          <div className="flex items-center gap-2 mb-3">
-            <span style={{ color: GOLD_DARK }}>✨</span>
-            <h2 className="flex-1 text-center font-bold text-base" style={{ color: TEXT_DARK }}>
+          {/* Gold header strip */}
+          <div
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-t-[14px]"
+            style={{ backgroundColor: GOLD_DARK }}
+          >
+            <span className="opacity-90">✨</span>
+            <h2 className="font-bold text-sm text-white">
               {t('dashboardRef.explainTitle')}
             </h2>
-            <MessageCircle className="w-5 h-5 shrink-0" style={{ color: GOLD_DARK }} />
+            <MessageCircle className="w-4 h-4 shrink-0 text-white" />
           </div>
-          <div className="flex flex-col items-center text-center mb-4">
-            <div
-              className="w-14 h-14 rounded-full flex items-center justify-center mb-3 border-2"
-              style={{ borderColor: GOLD_DARK }}
-            >
-              <MessageCircle className="w-7 h-7" style={{ color: GOLD_DARK }} />
+          <div className="p-5">
+            <div className="flex flex-col items-center text-center mb-4">
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center mb-3 border-2"
+                style={{ backgroundColor: CREAM_INPUT, borderColor: GOLD_DARK }}
+              >
+                <MessageCircle className="w-8 h-8" style={{ color: GOLD_DARK }} />
+              </div>
+              <p className="font-medium text-sm mb-1" style={{ color: TEXT_DARK }}>
+                {t('dashboardRef.helloPrompt')}
+              </p>
+              <p className="text-sm italic" style={{ color: TEXT_MUTED }}>
+                {t('dashboardRef.describePrompt')}
+              </p>
             </div>
-            <p className="font-medium text-sm mb-1" style={{ color: TEXT_MUTED }}>
-              {t('dashboardRef.helloPrompt')}
-            </p>
-            <p className="text-sm italic" style={{ color: TEXT_MUTED }}>
-              {t('dashboardRef.describePrompt')}
-            </p>
-          </div>
-          {/* Input row */}
-          <div
-            className="flex items-center gap-2 rounded-full border pl-2 pr-2 py-2 mb-4"
-            style={{ backgroundColor: CHAT_CARD_BG, borderColor: GOLD_DARK }}
-          >
+            {/* Input row - cream */}
+            <div
+              className="flex items-center gap-2 rounded-full border-2 pl-3 pr-3 py-2.5 mb-4"
+              style={{ backgroundColor: CREAM_INPUT, borderColor: GOLD_DARK }}
+            >
             <button
               type="button"
               className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
@@ -180,48 +283,56 @@ export function DashboardHome() {
             <button
               type="button"
               onClick={handleSendChat}
-              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
               style={{ backgroundColor: GOLD_DARK }}
               aria-label="Send"
             >
               <Send className="w-4 h-4 text-white" />
             </button>
           </div>
-          {/* Two primary buttons */}
+          {/* Two primary buttons: Scan → camera, Upload → files/gallery. Same size, same frame. */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             <button
               type="button"
-              onClick={() => navigate('/dashboard/new')}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 min-h-[48px]"
               style={{ backgroundColor: NAV_BG, borderColor: GOLD_DARK, color: GOLD }}
+              aria-label={t('dashboardRef.scanDocument')}
             >
-              <Camera className="w-4 h-4" />
-              <span className="text-xs font-medium">{t('dashboardRef.scanDocument')}</span>
+              <Camera className="w-5 h-5 shrink-0" />
+              <span className="text-sm font-medium">{t('dashboardRef.scanDocument')}</span>
             </button>
             <button
               type="button"
-              onClick={() => navigate('/dashboard/new')}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2"
+              onClick={() => uploadInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 min-h-[48px]"
               style={{ backgroundColor: NAV_BG, borderColor: GOLD_DARK, color: GOLD }}
+              aria-label={t('dashboardRef.uploadFile')}
             >
-              <Paperclip className="w-4 h-4" />
-              <span className="text-xs font-medium">{t('dashboardRef.uploadFile')}</span>
+              <Paperclip className="w-5 h-5 shrink-0" />
+              <span className="text-sm font-medium">{t('dashboardRef.uploadFile')}</span>
             </button>
           </div>
-          {/* 6 action buttons */}
+          {/* 6 action buttons - Scan/Upload open camera or file picker */}
           <div className="grid grid-cols-2 gap-2">
             {SIX_ACTIONS.map(({ key, icon: Icon }) => (
               <button
                 key={key}
                 type="button"
-                onClick={() => (key === 'scanDocument' || key === 'uploadFile' ? navigate('/dashboard/new') : undefined)}
-                className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl border"
+                onClick={() => {
+                  if (key === 'scanDocument') cameraInputRef.current?.click();
+                  else if (key === 'uploadFile') uploadInputRef.current?.click();
+                }}
+                className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl border-2 min-h-[56px]"
                 style={{ backgroundColor: NAV_BG, borderColor: GOLD_DARK, color: '#fff' }}
               >
                 <Icon className="w-5 h-5" style={{ color: GOLD }} />
                 <span className="text-xs font-medium">{t(`dashboardRef.${key}`)}</span>
               </button>
             ))}
+          </div>
           </div>
         </div>
 
@@ -364,6 +475,17 @@ export function DashboardHome() {
           {t('dashboardRef.lexoraWebsite')}
         </a>
       </div>
+
+      {/* Toast: upload success / error */}
+      {toast && (
+        <div
+          className="fixed bottom-20 left-4 right-4 z-50 py-3 px-4 rounded-xl text-center text-sm font-medium shadow-lg"
+          style={{ backgroundColor: NAV_BG, color: GOLD }}
+          role="status"
+        >
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
