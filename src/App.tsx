@@ -17,6 +17,9 @@ import { Privacy } from './pages/legal/Privacy';
 import { Disclaimer } from './pages/legal/Disclaimer';
 import { Imprint } from './pages/legal/Imprint';
 import { About } from './pages/About';
+import { Contact } from './pages/Contact';
+import { FAQ } from './pages/FAQ';
+import { Help } from './pages/Help';
 
 function App() {
   return (
@@ -37,6 +40,9 @@ function App() {
           <Route path="/disclaimer" element={<Disclaimer />} />
           <Route path="/imprint" element={<Imprint />} />
           <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/help" element={<Help />} />
           <Route
             path="/dashboard"
             element={
