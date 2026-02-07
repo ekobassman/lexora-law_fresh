@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom';
-import { LexoraChat } from '@/components/ai/LexoraChat';
+import { LexoraChat } from '@/components/chat/LexoraChat';
 
 /**
  * Dashboard "Explain" page: real chat (same as /dashboard/chat).

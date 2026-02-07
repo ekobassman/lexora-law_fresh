@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { ChatEdit } from '@/components/chat/ChatEdit';
+import { LexoraChat } from '@/components/chat/LexoraChat';
 import { DocumentViewer } from '@/components/documents/DocumentViewer';
 import { DocumentList } from '@/components/documents/DocumentList';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
@@ -63,7 +63,7 @@ export function CaseDetail() {
           </div>
           <div>
             <h2 className="text-lg font-medium mb-3">Modifica con AI</h2>
-            <ChatEdit caseId={caseData.id} draftResponse={caseData.draft_response} />
+            <LexoraChat mode="dashboard" caseId={caseData.id} showLiveBadge />
           </div>
         </div>
       </div>

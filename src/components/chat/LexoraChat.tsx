@@ -1,11 +1,12 @@
 /**
- * Unified Lexora chat: one component for Demo and Dashboard.
- * - demoMode: process-ocr for upload/scan, limited text replies (or "Sign in for full chat").
- * - dashboardMode: real API (dashboard-chat), full pipeline context, loading/errors/401.
+ * Canonical Lexora chat — SINGLE source of truth.
+ * - mode="demo": reuses working ChatDemo (real process-ocr, real messages). No fake.
+ * - mode="dashboard": requires auth; real dashboard-chat API + canonical pipeline. No fake.
+ * Lovable: do not create new chat implementations. Reuse this only.
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useLanguageContext } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardDocuments } from '@/hooks/useDashboardDocuments';
@@ -20,6 +21,7 @@ import {
   Scale,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ChatDemo } from './ChatDemo';
 
 const GOLD = '#d4af37';
 const GOLD_DARK = '#b8962e';
@@ -48,17 +50,12 @@ export interface LexoraChatResponse {
 
 export interface LexoraChatProps {
   mode: 'demo' | 'dashboard';
-  /** Pre-select document for context (dashboard only) */
   documentId?: string | null;
-  /** Pre-select case (dashboard only) */
   caseId?: string | null;
-  /** Initial user message to send on mount (e.g. from dashboard home) */
   initialMessage?: string | null;
-  /** Show "Dashboard Chat (LIVE)" in header */
+  /** Shows "Lexora Dashboard Chat (LIVE)" when true */
   showLiveBadge?: boolean;
-  /** Compact layout (e.g. embedded in card) */
   compact?: boolean;
-  /** Callback when document is uploaded from this chat (dashboard: set documentId) */
   onDocumentUploaded?: (docId: string) => void;
 }
 
@@ -73,6 +70,54 @@ export function LexoraChat({
   compact = false,
   onDocumentUploaded,
 }: LexoraChatProps) {
+  const { user } = useAuth();
+
+  // Demo: reuse the WORKING chat (real process-ocr, real messages). No fake.
+  if (mode === 'demo') {
+    return <ChatDemo />;
+  }
+
+  // Dashboard: require auth. Do NOT show fake chat.
+  if (!user) {
+    return (
+      <div
+        className="rounded-2xl border-2 p-6 text-center"
+        style={{ backgroundColor: CREAM, borderColor: GOLD_DARK }}
+      >
+        <p className="font-medium mb-2" style={{ color: TEXT_DARK }}>
+          Please log in to use Dashboard Chat.
+        </p>
+        <Link
+          to="/auth"
+          className="inline-block px-4 py-2 rounded-xl font-medium"
+          style={{ backgroundColor: GOLD_DARK, color: 'white' }}
+        >
+          Log in
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <DashboardChatInner
+      documentId={propDocumentId}
+      caseId={propCaseId}
+      initialMessage={initialMessage}
+      showLiveBadge={showLiveBadge}
+      compact={compact}
+      onDocumentUploaded={onDocumentUploaded}
+    />
+  );
+}
+
+function DashboardChatInner({
+  documentId: propDocumentId,
+  caseId: propCaseId,
+  initialMessage,
+  showLiveBadge = false,
+  compact = false,
+  onDocumentUploaded,
+}: Omit<LexoraChatProps, 'mode'>) {
   const { t } = useLanguageContext();
   const navigate = useNavigate();
   const location = useLocation();
@@ -89,15 +134,13 @@ export function LexoraChat({
     null;
 
   const [messages, setMessages] = useState<LexoraChatMessage[]>(() => {
-    if (mode === 'dashboard') {
-      try {
-        const raw = localStorage.getItem(CHAT_STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch {}
-    }
+    try {
+      const raw = localStorage.getItem(CHAT_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
     return [];
   });
   const [input, setInput] = useState('');
@@ -117,12 +160,12 @@ export function LexoraChat({
   const caseId = propCaseId ?? activeCaseId;
 
   useEffect(() => {
-    if (mode === 'dashboard' && messages.length > 0) {
+    if (messages.length > 0) {
       try {
         localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
       } catch {}
     }
-  }, [mode, messages]);
+  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -179,16 +222,9 @@ export function LexoraChat({
     [documentId, caseId, user, fetchFull]
   );
 
-  // Send initial message on mount if provided (dashboard only)
   const initialSent = useRef(false);
   useEffect(() => {
-    if (
-      mode !== 'dashboard' ||
-      !stateMessage?.trim() ||
-      initialSent.current ||
-      !user
-    )
-      return;
+    if (!stateMessage?.trim() || initialSent.current || !user) return;
     initialSent.current = true;
     const userMsg: LexoraChatMessage = { role: 'user', content: stateMessage.trim() };
     setMessages((prev) => [...prev, userMsg]);
@@ -196,9 +232,7 @@ export function LexoraChat({
     callDashboardChatApi([userMsg])
       .then((res) => {
         const text =
-          res.message ??
-          res.assistant_message ??
-          (res.ok ? '' : 'Error');
+          res.message ?? res.assistant_message ?? (res.ok ? '' : 'Error');
         if (text)
           setMessages((prev) => [
             ...prev,
@@ -206,7 +240,10 @@ export function LexoraChat({
           ]);
       })
       .catch((err: Error) => {
-        if (err?.message?.includes('401') || err?.message?.toLowerCase().includes('jwt'))
+        if (
+          err?.message?.includes('401') ||
+          err?.message?.toLowerCase().includes('jwt')
+        )
           setSessionExpired(true);
         else setToast(err?.message ?? t('dashboard.chatError'));
         setMessages((prev) => [
@@ -215,7 +252,7 @@ export function LexoraChat({
         ]);
       })
       .finally(() => setLoading(false));
-  }, [mode, stateMessage, user, callDashboardChatApi, t]);
+  }, [stateMessage, user, callDashboardChatApi, t]);
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
@@ -229,26 +266,9 @@ export function LexoraChat({
     setToast(null);
     setSessionExpired(false);
 
-    if (mode === 'demo') {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content:
-            t('chat.demo_sign_in') ??
-            'Sign in to use the full Lexora chat and save documents.',
-        },
-      ]);
-      setLoading(false);
-      return;
-    }
-
     try {
       const data = await callDashboardChatApi(newMsgs);
-      const reply =
-        data.message ??
-        data.assistant_message ??
-        '';
+      const reply = data.message ?? data.assistant_message ?? '';
       setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('dashboard.chatError');
@@ -266,11 +286,11 @@ export function LexoraChat({
     } finally {
       setLoading(false);
     }
-  }, [input, messages, loading, mode, callDashboardChatApi, t]);
+  }, [input, messages, loading, callDashboardChatApi, t]);
 
   const doUpload = useCallback(
     async (file: File) => {
-      if (mode !== 'dashboard' || !user?.id) return;
+      if (!user?.id) return;
       const isImage = /^image\/(jpeg|jpg|png|webp)$/i.test(file.type);
       const path = `${user.id}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
       setUploading(true);
@@ -349,7 +369,7 @@ export function LexoraChat({
         setUploading(false);
       }
     },
-    [mode, user?.id, refetchDocs, onDocumentUploaded, t]
+    [user?.id, refetchDocs, onDocumentUploaded, t]
   );
 
   const handleCameraChange = useCallback(
@@ -390,12 +410,11 @@ export function LexoraChat({
           className="flex items-center justify-center gap-2 py-2 px-3 rounded-t-xl text-sm font-semibold"
           style={{ backgroundColor: GOLD_DARK, color: 'white' }}
         >
-          <span>Dashboard Chat (LIVE)</span>
+          Lexora Dashboard Chat (LIVE)
         </div>
       )}
 
       <div className={cn('flex flex-col flex-1 p-4', compact && 'p-3')}>
-        {/* Session expired */}
         {sessionExpired && (
           <div
             className="mb-3 py-3 px-4 rounded-lg text-sm"
@@ -412,7 +431,6 @@ export function LexoraChat({
           </div>
         )}
 
-        {/* Toast */}
         {toast && (
           <div
             className="mb-3 py-2 px-3 rounded-lg text-sm"
@@ -422,7 +440,6 @@ export function LexoraChat({
           </div>
         )}
 
-        {/* Messages */}
         <div
           className={cn(
             'flex-1 overflow-y-auto space-y-3 mb-3 min-h-0',
@@ -488,7 +505,6 @@ export function LexoraChat({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input row */}
         <div
           className="flex items-center gap-2 rounded-full border-2 pl-3 pr-3 py-2 mb-3"
           style={{ backgroundColor: CREAM_INPUT, borderColor: GOLD_DARK }}
@@ -522,62 +538,57 @@ export function LexoraChat({
           </button>
         </div>
 
-        {/* Scan / Upload - dashboard only */}
-        {mode === 'dashboard' && (
-          <>
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleCameraChange}
-              className="hidden"
-              aria-hidden
-            />
-            <input
-              ref={uploadInputRef}
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
-              onChange={handleUploadChange}
-              className="hidden"
-              aria-hidden
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => cameraInputRef.current?.click()}
-                disabled={uploading || sessionExpired}
-                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 min-h-[44px] text-sm font-medium disabled:opacity-50"
-                style={{
-                  backgroundColor: NAV_BG,
-                  borderColor: GOLD_DARK,
-                  color: GOLD,
-                }}
-              >
-                <Camera className="w-4 h-4" />
-                {t('dashboardRef.scanDocument')}
-              </button>
-              <button
-                type="button"
-                onClick={() => uploadInputRef.current?.click()}
-                disabled={uploading || sessionExpired}
-                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 min-h-[44px] text-sm font-medium disabled:opacity-50"
-                style={{
-                  backgroundColor: NAV_BG,
-                  borderColor: GOLD_DARK,
-                  color: GOLD,
-                }}
-              >
-                <Paperclip className="w-4 h-4" />
-                {t('dashboardRef.uploadFile')}
-              </button>
-            </div>
-            {activeDoc && (
-              <p className="text-xs mt-2" style={{ color: TEXT_MUTED }}>
-                {t('dashboard.chatModeDoc')}: {activeDoc.filename}
-              </p>
-            )}
-          </>
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleCameraChange}
+          className="hidden"
+          aria-hidden
+        />
+        <input
+          ref={uploadInputRef}
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
+          onChange={handleUploadChange}
+          className="hidden"
+          aria-hidden
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={uploading || sessionExpired}
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 min-h-[44px] text-sm font-medium disabled:opacity-50"
+            style={{
+              backgroundColor: NAV_BG,
+              borderColor: GOLD_DARK,
+              color: GOLD,
+            }}
+          >
+            <Camera className="w-4 h-4" />
+            {t('dashboardRef.scanDocument')}
+          </button>
+          <button
+            type="button"
+            onClick={() => uploadInputRef.current?.click()}
+            disabled={uploading || sessionExpired}
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border-2 min-h-[44px] text-sm font-medium disabled:opacity-50"
+            style={{
+              backgroundColor: NAV_BG,
+              borderColor: GOLD_DARK,
+              color: GOLD,
+            }}
+          >
+            <Paperclip className="w-4 h-4" />
+            {t('dashboardRef.uploadFile')}
+          </button>
+        </div>
+        {activeDoc && (
+          <p className="text-xs mt-2" style={{ color: TEXT_MUTED }}>
+            {t('dashboard.chatModeDoc')}: {activeDoc.filename}
+          </p>
         )}
       </div>
     </div>

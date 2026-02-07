@@ -10,7 +10,7 @@ import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { DashboardShellLayout } from '@/components/dashboard/DashboardShellLayout';
 import { DashboardHome } from '@/components/dashboard/DashboardHome';
 import { DashboardExplain } from '@/components/dashboard/DashboardExplain';
-import { LexoraChat } from '@/components/ai/LexoraChat';
+import { LexoraChat } from '@/components/chat/LexoraChat';
 import { Home } from '@/pages/Home';
 import { DashboardNew } from '@/pages/DashboardNew';
 import { DashboardSettings } from '@/pages/DashboardSettings';

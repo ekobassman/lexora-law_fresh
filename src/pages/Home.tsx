@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { LexoraChat } from '@/components/ai/LexoraChat';
+import { LexoraChat } from '@/components/chat/LexoraChat';
 import {
   PricingSection,
   TestimonialsSection,
