@@ -380,6 +380,14 @@
   },
   "dashboardNew": {
     "title": "Neuer Fall oder Upload",
+    "back": "Zurück",
+    "pageTitle": "Laden Sie Ihr Dokument hoch",
+    "pageSubtitle": "Machen Sie ein Foto oder laden Sie eine Datei hoch, um zu beginnen",
+    "takePhoto": "Foto aufnehmen",
+    "takePhotoDesc": "Mehrere Dokumentfotos nacheinander aufnehmen",
+    "uploadFile": "Datei hochladen",
+    "uploadFileDesc": "Wählen Sie eine PDF- oder Bilddatei von Ihrem Gerät",
+    "supportedFormats": "Unterstützte Formate: JPG, PNG, PDF",
     "camera": {"aria": "Dokument mit Kamera scannen"},
     "upload": {"aria": "Dokument hochladen"},
     "uploadSuccess": "Dokument erfolgreich hochgeladen."

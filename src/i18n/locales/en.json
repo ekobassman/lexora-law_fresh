@@ -380,6 +380,14 @@
   },
   "dashboardNew": {
     "title": "New case or upload",
+    "back": "Back",
+    "pageTitle": "Upload Your Document",
+    "pageSubtitle": "Take a photo or upload a file to get started",
+    "takePhoto": "Take photo",
+    "takePhotoDesc": "Take multiple document photos in sequence",
+    "uploadFile": "Upload file",
+    "uploadFileDesc": "Select a PDF or image file from your device",
+    "supportedFormats": "Supported formats: JPG, PNG, PDF",
     "camera": {"aria": "Scan document with camera"},
     "upload": {"aria": "Upload document"},
     "uploadSuccess": "Document uploaded successfully."

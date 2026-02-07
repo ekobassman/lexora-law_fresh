@@ -1,54 +1,21 @@
 import { useState, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useLanguageContext } from '@/contexts/LanguageContext';
 import { supabase, STORAGE_BUCKET } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardDocuments } from '@/hooks/useDashboardDocuments';
-import { Camera, Upload, ChevronDown, User } from 'lucide-react';
+import { Camera, Upload, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
-const ORNAMENT_SVG = (
-  <svg viewBox="0 0 120 120" className="w-full h-full" fill="none">
-    <path
-      d="M0 60 Q30 20 60 60 Q90 100 120 60"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      fill="none"
-      opacity="0.4"
-    />
-    <path
-      d="M20 100 Q50 60 80 100"
-      stroke="currentColor"
-      strokeWidth="1"
-      fill="none"
-      opacity="0.3"
-    />
-    <path
-      d="M60 0 Q100 30 60 60 Q20 90 60 120"
-      stroke="currentColor"
-      strokeWidth="1"
-      fill="none"
-      opacity="0.25"
-    />
-    <path
-      d="M0 30 Q40 50 60 30 Q80 10 120 30"
-      stroke="currentColor"
-      strokeWidth="1.2"
-      fill="none"
-      opacity="0.35"
-    />
-    <path
-      d="M10 10 Q50 50 90 10"
-      stroke="currentColor"
-      strokeWidth="1"
-      fill="none"
-      opacity="0.2"
-    />
-  </svg>
-);
+const GOLD = '#d4af37';
+const CONTENT_BG = '#f5f2ee';
+const CARD_BG = '#f8f7f4';
+const TEXT_DARK = '#1a2b3c';
+const TEXT_MUTED = '#555555';
 
 export function DashboardNew() {
-  const { t } = useTranslation();
+  const { t } = useLanguageContext();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { refetch } = useDashboardDocuments();
@@ -160,151 +127,173 @@ export function DashboardNew() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f5f5f0]">
-      {/* Top bar */}
-      <header
-        className="h-[84px] shrink-0 flex items-center justify-between px-4 sm:px-6 border-b border-[#d4af37]"
-        style={{
-          background: 'linear-gradient(90deg, #0f172a 0%, #1e293b 100%)',
-        }}
-      >
-        <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#d4af37] shrink-0">
-            <span className="font-serif text-lg font-semibold text-[#d4af37]" style={{ fontFamily: 'Georgia, serif' }}>
-              L
+    <div className="min-h-full flex flex-col" style={{ backgroundColor: CONTENT_BG }}>
+      <div className="px-4 pt-4 pb-8">
+        {/* Back button - light beige, gold border */}
+        <Link
+          to="/dashboard"
+          className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border-2 mb-6 no-underline"
+          style={{
+            backgroundColor: CARD_BG,
+            borderColor: GOLD,
+            color: TEXT_DARK,
+          }}
+        >
+          <ArrowLeft className="w-5 h-5" style={{ color: GOLD }} />
+          <span className="font-medium">{t('dashboardNew.back')}</span>
+        </Link>
+
+        {/* Title - serif, dark */}
+        <h1
+          className="text-center text-2xl font-bold mb-2"
+          style={{
+            color: TEXT_DARK,
+            fontFamily: "'Playfair Display', Georgia, serif",
+          }}
+        >
+          {t('dashboardNew.pageTitle')}
+        </h1>
+        <p
+          className="text-center text-sm mb-8"
+          style={{ color: GOLD }}
+        >
+          {t('dashboardNew.pageSubtitle')}
+        </p>
+
+        {/* Hidden inputs: camera (opens camera on mobile), file (opens file/gallery picker) */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleCameraChange}
+          className="hidden"
+          aria-hidden
+        />
+        <input
+          ref={uploadInputRef}
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
+          onChange={handleUploadChange}
+          className="hidden"
+          aria-hidden
+        />
+
+        {/* Card 1: Foto aufnehmen */}
+        <button
+          type="button"
+          onClick={() => cameraInputRef.current?.click()}
+          disabled={uploading}
+          aria-label={t('dashboardNew.camera.aria')}
+          className={cn(
+            'w-full block text-left rounded-2xl border-2 p-6 mb-6 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#d4af37]/50',
+            uploading && 'opacity-70 pointer-events-none'
+          )}
+          style={{
+            backgroundColor: CARD_BG,
+            borderColor: GOLD,
+          }}
+        >
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 flex items-center justify-center mb-4">
+              <Camera className="w-12 h-12" style={{ color: GOLD }} />
+            </div>
+            <span
+              className="text-lg font-bold block text-center mb-2"
+              style={{ color: GOLD }}
+            >
+              {t('dashboardNew.takePhoto')}
+            </span>
+            <span
+              className="text-sm text-center block"
+              style={{ color: TEXT_MUTED }}
+            >
+              {t('dashboardNew.takePhotoDesc')}
             </span>
           </div>
-          <span className="font-serif text-2xl font-medium tracking-widest text-[#d4af37] uppercase">
-            LEXORA
-          </span>
-        </Link>
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-full border border-[#d4af37]/60 text-[#d4af37]">
-            <ChevronDown className="h-4 w-4" />
+        </button>
+
+        {/* Card 2: Datei hochladen */}
+        <button
+          type="button"
+          onClick={() => uploadInputRef.current?.click()}
+          disabled={uploading}
+          aria-label={t('dashboardNew.upload.aria')}
+          className={cn(
+            'w-full block text-left rounded-2xl border-2 p-6 mb-6 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#d4af37]/50',
+            uploading && 'opacity-70 pointer-events-none'
+          )}
+          style={{
+            backgroundColor: CARD_BG,
+            borderColor: GOLD,
+          }}
+        >
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 flex items-center justify-center mb-4">
+              <Upload className="w-12 h-12" style={{ color: GOLD }} />
+            </div>
+            <span
+              className="text-lg font-bold block text-center mb-2"
+              style={{ color: GOLD }}
+            >
+              {t('dashboardNew.uploadFile')}
+            </span>
+            <span
+              className="text-sm text-center block"
+              style={{ color: TEXT_MUTED }}
+            >
+              {t('dashboardNew.uploadFileDesc')}
+            </span>
           </div>
-          <Link
-            to="/dashboard"
-            className="p-2 rounded-full border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37]/10 transition-colors"
-            aria-label="User menu"
-          >
-            <User className="h-5 w-5" />
+        </button>
+
+        {/* Supported formats */}
+        <p
+          className="text-center text-sm"
+          style={{ color: TEXT_MUTED }}
+        >
+          {t('dashboardNew.supportedFormats')}
+        </p>
+      </div>
+
+      {/* Footer: legal links + copyright + website (second reference image) */}
+      <footer className="mt-auto px-4 pt-8 pb-24" style={{ backgroundColor: CONTENT_BG }}>
+        <div className="flex flex-col gap-3 text-sm mb-6" style={{ color: TEXT_MUTED }}>
+          <Link to="/disclaimer" className="flex items-center gap-2 no-underline" style={{ color: TEXT_MUTED }}>
+            <span className="text-base">🛡</span> {t('legal.disclaimerTitle')}
+          </Link>
+          <Link to="/privacy" className="flex items-center gap-2 no-underline" style={{ color: TEXT_MUTED }}>
+            <span className="text-base">🛡</span> {t('legal.privacyTitle')}
+          </Link>
+          <Link to="/terms" className="flex items-center gap-2 no-underline" style={{ color: TEXT_MUTED }}>
+            <span className="text-base">📄</span> {t('legal.termsTitle')}
+          </Link>
+          <Link to="/help" className="flex items-center gap-2 no-underline" style={{ color: TEXT_MUTED }}>
+            <span className="text-base">🎧</span> {t('dashboardShell.support')}
+          </Link>
+          <Link to="/imprint" className="flex items-center gap-2 no-underline" style={{ color: TEXT_MUTED }}>
+            <span className="text-base">⚖</span> {t('legal.imprintTitle')}
           </Link>
         </div>
-      </header>
-
-      {/* Background with ornaments */}
-      <main
-        className="flex-1 relative overflow-hidden flex flex-col items-center justify-center px-4 py-12 sm:py-16"
-        style={{
-          background: 'radial-gradient(ellipse at center, #f8f7f2 0%, #f5f5f0 50%, #e8e6df 100%)',
-        }}
-      >
-        {/* Ornaments */}
-        <div className="pointer-events-none absolute inset-0 text-[#d4af37]/50">
-          <div className="absolute top-4 left-4 w-24 h-24 sm:w-32 sm:h-32 opacity-60 transform -scale-x-100">
-            {ORNAMENT_SVG}
-          </div>
-          <div className="absolute top-4 right-4 w-24 h-24 sm:w-32 sm:h-32 opacity-60">
-            {ORNAMENT_SVG}
-          </div>
-          <div className="absolute bottom-4 left-4 w-24 h-24 sm:w-32 sm:h-32 opacity-60 transform -scale-100">
-            {ORNAMENT_SVG}
-          </div>
-          <div className="absolute bottom-4 right-4 w-24 h-24 sm:w-32 sm:h-32 opacity-60 transform scale-x-[-1]">
-            {ORNAMENT_SVG}
-          </div>
-        </div>
-
-        {/* Tiles */}
-        <div className="relative z-10 w-full max-w-2xl mx-auto space-y-8 sm:space-y-12">
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleCameraChange}
-            className="hidden"
-          />
-          <input
-            ref={uploadInputRef}
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.webp"
-            onChange={handleUploadChange}
-            className="hidden"
-          />
-
-          <button
-            onClick={() => cameraInputRef.current?.click()}
-            disabled={uploading}
-            aria-label={t('dashboardNew.camera.aria')}
-            className={cn(
-              'w-full block group rounded-2xl overflow-hidden transition-all duration-200',
-              'hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(212,175,55,0.25)]',
-              'focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50'
-            )}
-          >
-            <div
-              className="relative rounded-2xl p-6 sm:p-10"
-              style={{
-                border: '3px solid #0f172a',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)',
-                background: 'linear-gradient(180deg, #f8f7f2 0%, #f0eee6 100%)',
-              }}
-            >
-              <div
-                className="absolute inset-[3px] rounded-[13px] pointer-events-none"
-                style={{ border: '2px solid #d4af37' }}
-              />
-              <div className="relative flex items-center justify-center min-h-[120px] sm:min-h-[160px]">
-                <span className="sr-only">{t('dashboardNew.camera.aria')}</span>
-                <Camera
-                  className="w-20 h-20 sm:w-24 sm:h-24 text-[#d4af37] drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
-                  style={{
-                    filter: 'drop-shadow(0 1px 0 rgba(255,255,255,0.5))',
-                  }}
-                />
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => uploadInputRef.current?.click()}
-            disabled={uploading}
-            aria-label={t('dashboardNew.upload.aria')}
-            className={cn(
-              'w-full block group rounded-2xl overflow-hidden transition-all duration-200',
-              'hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgba(212,175,55,0.25)]',
-              'focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50'
-            )}
-          >
-            <div
-              className="relative rounded-2xl p-6 sm:p-10"
-              style={{
-                border: '3px solid #0f172a',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)',
-                background: 'linear-gradient(180deg, #f8f7f2 0%, #f0eee6 100%)',
-              }}
-            >
-              <div
-                className="absolute inset-[3px] rounded-[13px] pointer-events-none"
-                style={{ border: '2px solid #d4af37' }}
-              />
-              <div className="relative flex items-center justify-center min-h-[120px] sm:min-h-[160px]">
-                <span className="sr-only">{t('dashboardNew.upload.aria')}</span>
-                <Upload
-                  className="w-20 h-20 sm:w-24 sm:h-24 text-[#d4af37] drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
-                  style={{
-                    filter: 'drop-shadow(0 1px 0 rgba(255,255,255,0.5))',
-                  }}
-                />
-              </div>
-            </div>
-          </button>
-        </div>
-      </main>
+        <p className="text-center text-sm mb-4" style={{ color: TEXT_DARK, fontFamily: "'Playfair Display', Georgia, serif" }}>
+          LEXORA © 2026
+        </p>
+        <a
+          href="https://lexora-law.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-center py-3 px-6 rounded-full bg-white border border-[#e5e2dd] text-sm no-underline font-medium"
+          style={{ color: TEXT_DARK }}
+        >
+          lexora-law.com
+        </a>
+      </footer>
 
       {toast && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-[#1e293b] border border-[#d4af37]/40 rounded-lg px-4 py-2 text-sm text-white shadow-lg z-50">
+        <div
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 rounded-lg px-4 py-2 text-sm text-white shadow-lg z-50"
+          style={{ backgroundColor: '#1e293b', border: `1px solid ${GOLD}40` }}
+        >
           {toast}
         </div>
       )}
