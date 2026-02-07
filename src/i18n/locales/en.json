@@ -276,8 +276,31 @@
   "common": {
     "close": "Close",
     "cancel": "Cancel",
+    "create": "Create",
     "save": "Save",
     "loading": "Loading..."
+  },
+  "dashboard": {
+    "newCase": {
+      "title": "Open a new case / file",
+      "subtitle": "Create a case to organize documents, deadlines, and replies.",
+      "cta": "Open case"
+    },
+    "selectCase": "Select case",
+    "activeCase": "Active case",
+    "caseCreated": "Case created successfully."
+  },
+  "dashboardNew": {
+    "title": "New case or upload",
+    "camera": {"aria": "Scan document with camera"},
+    "upload": {"aria": "Upload document"},
+    "uploadSuccess": "Document uploaded successfully."
+  },
+  "case": {
+    "title": "Title",
+    "authority": "Authority",
+    "reference": "Reference (Aktenzeichen)",
+    "deadline": "Deadline"
   },
   "legal": {
     "backToHome": "Back to home",

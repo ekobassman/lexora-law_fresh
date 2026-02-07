@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import {
   useDashboardDocuments,
   type DashboardDocument,
 } from '@/hooks/useDashboardDocuments';
+import { useCases } from '@/hooks/useCases';
 import { Button } from '@/components/ui/Button';
 import {
   Upload,
@@ -17,10 +20,13 @@ import {
   X,
   Save,
   Printer,
+  FolderPlus,
+  FolderOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const CHAT_STORAGE_KEY = 'lexora_dashboard_chat_v1';
+const ACTIVE_CASE_STORAGE_KEY = 'lexora_active_case_id';
 
 interface ChatMsg {
   role: 'user' | 'assistant';
@@ -72,6 +78,7 @@ function getStatusBadgeClass(status: string) {
 }
 
 export function Dashboard() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const {
     documents,
@@ -82,6 +89,26 @@ export function Dashboard() {
     saveDraft,
     deleteDocument,
   } = useDashboardDocuments();
+  const { cases, createCase } = useCases();
+  const navigate = useNavigate();
+
+  const [activeCaseId, setActiveCaseId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(ACTIVE_CASE_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  });
+  const [activeCaseTitle, setActiveCaseTitle] = useState<string | null>(null);
+  const [newCaseModalOpen, setNewCaseModalOpen] = useState(false);
+  const [selectCaseModalOpen, setSelectCaseModalOpen] = useState(false);
+  const [newCaseForm, setNewCaseForm] = useState({
+    title: '',
+    authority: '',
+    reference: '',
+    deadline: '',
+  });
+  const [creatingCase, setCreatingCase] = useState(false);
 
   const [activeDoc, setActiveDoc] = useState<DashboardDocument | null>(null);
   const [modalDoc, setModalDoc] = useState<DashboardDocument | null>(null);
@@ -121,6 +148,57 @@ export function Dashboard() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, chatLoading]);
 
+  useEffect(() => {
+    if (activeCaseId) {
+      try {
+        localStorage.setItem(ACTIVE_CASE_STORAGE_KEY, activeCaseId);
+      } catch {}
+      const c = cases.find((x) => x.id === activeCaseId);
+      if (c) {
+        setActiveCaseTitle(c.title);
+      } else {
+        setActiveCaseTitle(null);
+        supabase
+          .from('cases')
+          .select('title')
+          .eq('id', activeCaseId)
+          .eq('user_id', user?.id ?? '')
+          .single()
+          .then(({ data }) => {
+            if (data) setActiveCaseTitle((data as { title: string }).title);
+          });
+      }
+    } else {
+      setActiveCaseTitle(null);
+    }
+  }, [activeCaseId, cases, user?.id]);
+
+  const handleCreateCase = useCallback(async () => {
+    const title = newCaseForm.title.trim();
+    if (!title) return;
+    setCreatingCase(true);
+    try {
+      const newCase = await createCase(title, undefined, undefined, {
+        authority: newCaseForm.authority.trim() || undefined,
+        aktenzeichen: newCaseForm.reference.trim() || undefined,
+        deadline: newCaseForm.deadline.trim() || undefined,
+      });
+      if (newCase) {
+        setActiveCaseId(newCase.id);
+        setNewCaseModalOpen(false);
+        setNewCaseForm({ title: '', authority: '', reference: '', deadline: '' });
+        setToast(t('dashboard.caseCreated'));
+      }
+    } finally {
+      setCreatingCase(false);
+    }
+  }, [newCaseForm, createCase, t]);
+
+  const handleSelectCase = useCallback((id: string) => {
+    setActiveCaseId(id);
+    setSelectCaseModalOpen(false);
+  }, []);
+
   const callDashboardChat = useCallback(
     async (msgs: ChatMsg[], mode: 'general' | 'document'): Promise<{
       assistant_message: string;
@@ -133,6 +211,7 @@ export function Dashboard() {
       const body: Record<string, unknown> = {
         mode,
         documentId: activeDoc?.id ?? null,
+        caseId: activeCaseId ?? null,
         messages: msgs.map((m) => ({ role: m.role, content: m.content })),
       };
       if (mode === 'document' && activeDoc) {
@@ -162,7 +241,7 @@ export function Dashboard() {
         suggested_draft: data.suggested_draft ?? null,
       };
     },
-    [activeDoc, fetchFull]
+    [activeDoc, activeCaseId, fetchFull]
   );
 
   const sendMessage = useCallback(async () => {
@@ -427,6 +506,40 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-[#0f172a] text-white">
       <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 space-y-6">
+        {/* New Case / Open File block */}
+        <section className="rounded-xl border-2 border-[#d4af37]/40 bg-[#1e293b] p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-serif text-[#d4af37] mb-1">
+                {t('dashboard.newCase.title')}
+              </h2>
+              <p className="text-gray-400 text-sm">{t('dashboard.newCase.subtitle')}</p>
+              {activeCaseTitle && (
+                <p className="text-xs text-[#d4af37]/80 mt-2">
+                  {t('dashboard.activeCase')}: {activeCaseTitle}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 shrink-0">
+              <Button
+                onClick={() => navigate('/dashboard/new')}
+                className="bg-[#d4af37] text-[#0f172a] hover:bg-[#b8941d]"
+              >
+                <FolderPlus className="h-4 w-4 sm:mr-2" />
+                {t('dashboard.newCase.cta')}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setSelectCaseModalOpen(true)}
+                className="text-gray-400 hover:text-white"
+              >
+                <FolderOpen className="h-4 w-4 sm:mr-2" />
+                {t('dashboard.selectCase')}
+              </Button>
+            </div>
+          </div>
+        </section>
+
         {/* SECTION 1: Chat */}
         <section className="rounded-xl border-2 border-[#d4af37]/30 bg-[#1e293b] p-4 sm:p-5">
           <h2 className="text-xl font-serif text-[#d4af37] mb-1">Chat</h2>
@@ -727,6 +840,137 @@ export function Dashboard() {
                 Stampa
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Case Modal */}
+      {newCaseModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+          onClick={() => setNewCaseModalOpen(false)}
+        >
+          <div
+            className="bg-[#1e293b] border-2 border-[#d4af37]/40 rounded-xl max-w-md w-full p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-serif text-[#d4af37] mb-4">
+              {t('dashboard.newCase.title')}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">
+                  {t('case.title')} *
+                </label>
+                <input
+                  type="text"
+                  value={newCaseForm.title}
+                  onChange={(e) =>
+                    setNewCaseForm((f) => ({ ...f, title: e.target.value }))
+                  }
+                  placeholder={t('case.title')}
+                  className="w-full rounded-lg border border-[#d4af37]/40 bg-[#0f172a] text-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">
+                  {t('case.authority')}
+                </label>
+                <input
+                  type="text"
+                  value={newCaseForm.authority}
+                  onChange={(e) =>
+                    setNewCaseForm((f) => ({ ...f, authority: e.target.value }))
+                  }
+                  placeholder={t('case.authority')}
+                  className="w-full rounded-lg border border-[#d4af37]/40 bg-[#0f172a] text-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">
+                  {t('case.reference')}
+                </label>
+                <input
+                  type="text"
+                  value={newCaseForm.reference}
+                  onChange={(e) =>
+                    setNewCaseForm((f) => ({ ...f, reference: e.target.value }))
+                  }
+                  placeholder={t('case.reference')}
+                  className="w-full rounded-lg border border-[#d4af37]/40 bg-[#0f172a] text-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">
+                  {t('case.deadline')}
+                </label>
+                <input
+                  type="date"
+                  value={newCaseForm.deadline}
+                  onChange={(e) =>
+                    setNewCaseForm((f) => ({ ...f, deadline: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-[#d4af37]/40 bg-[#0f172a] text-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setNewCaseModalOpen(false)}
+                className="border-[#d4af37]/40 text-[#d4af37]"
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                onClick={handleCreateCase}
+                disabled={creatingCase || !newCaseForm.title.trim()}
+                className="bg-[#d4af37] text-[#0f172a] hover:bg-[#b8941d]"
+              >
+                {creatingCase ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  t('common.create')
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Select Case Modal */}
+      {selectCaseModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+          onClick={() => setSelectCaseModalOpen(false)}
+        >
+          <div
+            className="bg-[#1e293b] border-2 border-[#d4af37]/40 rounded-xl max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-serif text-[#d4af37] p-4 border-b border-[#d4af37]/20">
+              {t('dashboard.selectCase')}
+            </h3>
+            <ul className="overflow-y-auto p-4 space-y-2">
+              {cases.slice(0, 20).map((c) => (
+                <li key={c.id}>
+                  <button
+                    onClick={() => handleSelectCase(c.id)}
+                    className={cn(
+                      'w-full text-left px-4 py-3 rounded-lg border transition',
+                      activeCaseId === c.id
+                        ? 'border-[#d4af37] bg-[#d4af37]/10 text-white'
+                        : 'border-[#d4af37]/20 text-gray-300 hover:bg-[#0f172a]/50'
+                    )}
+                  >
+                    <span className="font-medium block">{c.title}</span>
+                    <span className="text-xs text-gray-500">
+                      {formatDate(c.created_at)}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       )}

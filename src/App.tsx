@@ -1,10 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { PWAInstallBanner } from '@/components/layout/PWAInstallBanner';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { Home } from '@/pages/Home';
 import { Dashboard } from '@/pages/Dashboard';
+import { DashboardNew } from '@/pages/DashboardNew';
 import { AuthPage } from '@/pages/Auth';
 import { AuthCallback } from '@/pages/AuthCallback';
 import { ResetPassword } from '@/pages/Auth/ResetPassword';
@@ -21,12 +22,14 @@ import { Contact } from './pages/Contact';
 import { FAQ } from './pages/FAQ';
 import { Help } from './pages/Help';
 
-function App() {
+function AppContent() {
+  const location = useLocation();
+  const isDashboardNew = location.pathname === '/dashboard/new';
+
   return (
-    <BrowserRouter>
-      <div className="flex min-h-screen flex-col">
-        <Navbar />
-        <div className="flex-1 pt-20">
+    <div className="flex min-h-screen flex-col">
+      {!isDashboardNew && <Navbar />}
+      <div className={isDashboardNew ? 'flex-1' : 'flex-1 pt-20'}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<AuthPage />} />
@@ -52,6 +55,14 @@ function App() {
             }
           />
           <Route
+            path="/dashboard/new"
+            element={
+              <ProtectedRoute>
+                <DashboardNew />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/cases/:id"
             element={
               <ProtectedRoute>
@@ -61,10 +72,17 @@ function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        </div>
-        <Footer />
-        <PWAInstallBanner />
       </div>
+      {!isDashboardNew && <Footer />}
+      <PWAInstallBanner />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   );
 }

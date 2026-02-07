@@ -276,8 +276,31 @@
   "common": {
     "close": "Schließen",
     "cancel": "Abbrechen",
+    "create": "Erstellen",
     "save": "Speichern",
     "loading": "Laden..."
+  },
+  "dashboard": {
+    "newCase": {
+      "title": "Neuen Fall / Datei öffnen",
+      "subtitle": "Erstellen Sie einen Fall zur Organisation von Dokumenten, Fristen und Antworten.",
+      "cta": "Fall öffnen"
+    },
+    "selectCase": "Fall auswählen",
+    "activeCase": "Aktiver Fall",
+    "caseCreated": "Fall erfolgreich erstellt."
+  },
+  "dashboardNew": {
+    "title": "Neuer Fall oder Upload",
+    "camera": {"aria": "Dokument mit Kamera scannen"},
+    "upload": {"aria": "Dokument hochladen"},
+    "uploadSuccess": "Dokument erfolgreich hochgeladen."
+  },
+  "case": {
+    "title": "Titel",
+    "authority": "Behörde",
+    "reference": "Referenz (Aktenzeichen)",
+    "deadline": "Frist"
   },
   "legal": {
     "backToHome": "Zurück zur Startseite",
