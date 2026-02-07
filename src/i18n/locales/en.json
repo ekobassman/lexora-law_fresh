@@ -24,7 +24,8 @@
     "button_print": "Print",
     "button_email": "E-Mail",
     "button_delete": "Delete conversation",
-    "welcome_message": "Hello, I'm Lexora. Briefly describe your legal situation so I can see how I can help you."
+    "welcome_message": "Hello, I'm Lexora. Briefly describe your legal situation so I can see how I can help you.",
+    "demo_sign_in": "Sign in to use the full Lexora chat and save documents."
   },
   "how_it_works": {
     "label": "How it works",

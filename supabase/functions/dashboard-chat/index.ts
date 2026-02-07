@@ -12,7 +12,10 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
@@ -24,8 +27,8 @@ serve(async (req) => {
       );
     }
 
-    const body = await req.json();
-    const { mode, documentId, messages, context } = body;
+    const body = await req.json().catch(() => ({}));
+    const { mode, documentId, caseId, messages, context, hasDocument } = body;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -105,11 +108,24 @@ serve(async (req) => {
       ? content.replace(/\[BOZZA\]\s*[\s\S]*/g, '').trim()
       : content;
 
+    // Standardized UI contract: ok, message, caseId, documentId, ocrText?, analysis?, draft?
+    const analysis = (context?.analysis_json as Record<string, unknown>) ?? {};
+    const risks = Array.isArray(analysis.risks) ? analysis.risks : [];
+    const deadlines = Array.isArray(analysis.deadlines) ? analysis.deadlines : [];
+
     return new Response(
       JSON.stringify({
         ok: true,
+        message: assistant_message,
         assistant_message,
         suggested_draft: suggested_draft || null,
+        caseId: caseId ?? null,
+        documentId: documentId ?? null,
+        ocrText: context?.ocr_text ?? null,
+        analysis: { risks, deadlines },
+        draft: suggested_draft
+          ? { body: suggested_draft, format: 'DIN5008' }
+          : null,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );

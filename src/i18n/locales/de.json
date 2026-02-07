@@ -24,7 +24,8 @@
     "button_print": "Drucken",
     "button_email": "E-Mail",
     "button_delete": "Unterhaltung löschen",
-    "welcome_message": "Hallo, ich bin Lexora. Schildern Sie kurz Ihre rechtliche Situation, damit ich sehen kann, wie ich helfen kann."
+    "welcome_message": "Hallo, ich bin Lexora. Schildern Sie kurz Ihre rechtliche Situation, damit ich sehen kann, wie ich helfen kann.",
+    "demo_sign_in": "Melden Sie sich an, um den vollen Lexora-Chat zu nutzen und Dokumente zu speichern."
   },
   "how_it_works": {
     "label": "So funktioniert's",

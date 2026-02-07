@@ -10,6 +10,7 @@ import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { DashboardShellLayout } from '@/components/dashboard/DashboardShellLayout';
 import { DashboardHome } from '@/components/dashboard/DashboardHome';
 import { DashboardExplain } from '@/components/dashboard/DashboardExplain';
+import { LexoraChat } from '@/components/ai/LexoraChat';
 import { Home } from '@/pages/Home';
 import { DashboardNew } from '@/pages/DashboardNew';
 import { DashboardSettings } from '@/pages/DashboardSettings';
@@ -82,6 +83,7 @@ function AppContent() {
             <Route index element={<DashboardHome />} />
             <Route path="new" element={<DashboardNew />} />
             <Route path="explain" element={<DashboardExplain />} />
+            <Route path="chat" element={<LexoraChat mode="dashboard" showLiveBadge />} />
             <Route path="settings" element={<DashboardSettings />} />
           </Route>
           <Route

@@ -151,7 +151,7 @@ export function DashboardHome() {
   }, []);
 
   const handleSendChat = () => {
-    if (chatInput.trim()) navigate('/dashboard/explain', { state: { initialMessage: chatInput.trim() } });
+    if (chatInput.trim()) navigate('/dashboard/chat', { state: { initialMessage: chatInput.trim() } });
   };
 
   return (

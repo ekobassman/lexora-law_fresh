@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChatDemo } from '@/components/chat/ChatDemo';
+import { LexoraChat } from '@/components/ai/LexoraChat';
 import {
   PricingSection,
   TestimonialsSection,
@@ -99,10 +99,10 @@ export function Home() {
       {/* Social Proof Counter */}
       <SocialProofCounter />
 
-      {/* Demo Chat Section - ChatDemo has own border/container */}
+      {/* Demo Chat Section - same LexoraChat component as dashboard (demo mode) */}
       <section id="chat-demo" className="py-20 scroll-mt-20 bg-[#0f172a]">
         <div className="max-w-2xl mx-auto px-4 sm:px-6">
-          <ChatDemo />
+          <LexoraChat mode="demo" />
         </div>
       </section>
 
